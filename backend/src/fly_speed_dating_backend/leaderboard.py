@@ -24,7 +24,7 @@ _client: Client | None = None
 # that changes maybe once every few minutes. A short shared (module-level,
 # so every connection benefits) TTL cache cuts that to ~1 request per
 # CACHE_TTL_SECONDS total, no matter how many clients are connected.
-CACHE_TTL_SECONDS = 3.0
+CACHE_TTL_SECONDS = 20.0
 _stats_cache: dict | None = None
 _stats_cache_ts: float = 0.0
 
