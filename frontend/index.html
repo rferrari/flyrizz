@@ -569,6 +569,73 @@ function updateMarquee(recentMatches) {
     .join("&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;");
 }
 
+// Procedural fly portrait -- a live SVG built from each fly's real cosmetic
+// stats (Wing Shimmer/Leg Length/Antennae Curl/Buzz Confidence, already sent
+// on every snapshot) and its hue, instead of a plain emoji + CSS hue-rotate.
+// Purely cosmetic, like the stats it visualizes -- doesn't touch da1/da2 or
+// any real simulation input. Deterministic per fly: same stats -> same art.
+function flySVG(cosmetic, hue) {
+  const shimmer = cosmetic["Wing Shimmer"] || 3;
+  const legLen = cosmetic["Leg Length"] || 3;
+  const curl = cosmetic["Antennae Curl"] || 3;
+  const confidence = cosmetic["Buzz Confidence"] || 3;
+
+  const bodyColor = `hsl(${hue}, 55%, 58%)`;
+  const darkColor = `hsl(${hue}, 45%, 30%)`;
+  const scale = 0.85 + confidence * 0.06; // bigger, bolder stance = more "confident"
+  const bodyRx = 34 * scale, bodyRy = 44 * scale;
+  const cx = 100, cy = 108;
+
+  const wingOpacity = (0.22 + shimmer * 0.1).toFixed(2);
+  const wingHighlight = shimmer >= 4
+    ? `<ellipse cx="${cx - 8}" cy="${cy - 40}" rx="10" ry="22" fill="white" opacity="0.35" />`
+    : "";
+
+  const legLength = 18 + legLen * 9;
+  const legs = [-1, 1].flatMap((side) => [0, 1, 2].map((i) => {
+    const y1 = cy - 6 + i * 16;
+    const x1 = cx + side * bodyRx * 0.7;
+    const x2 = x1 + side * legLength * 0.8;
+    const y2 = y1 + legLength * 0.6;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${darkColor}" stroke-width="3" stroke-linecap="round" />`;
+  })).join("");
+
+  const curlOffset = curl * 10;
+  const antennae = [-1, 1].map((side) => {
+    const baseX = cx + side * 10, baseY = cy - bodyRy * 0.85;
+    const ctrlX = baseX + side * (10 + curlOffset), ctrlY = baseY - 30;
+    const endX = baseX + side * (2 + curlOffset * 1.4), endY = baseY - 44;
+    return `<path d="M ${baseX} ${baseY} Q ${ctrlX} ${ctrlY} ${endX} ${endY}" stroke="${darkColor}" stroke-width="2.5" fill="none" stroke-linecap="round" />
+            <circle cx="${endX}" cy="${endY}" r="3" fill="${darkColor}" />`;
+  }).join("");
+
+  return `
+    <svg viewBox="0 0 200 200" width="100%" height="100%" style="max-height:100%">
+      <ellipse cx="${cx - 30}" cy="${cy - 30}" rx="26" ry="42" fill="var(--accent2)" opacity="${wingOpacity}" transform="rotate(-20 ${cx - 30} ${cy - 30})" />
+      <ellipse cx="${cx + 30}" cy="${cy - 30}" rx="26" ry="42" fill="var(--accent)" opacity="${wingOpacity}" transform="rotate(20 ${cx + 30} ${cy - 30})" />
+      ${wingHighlight}
+      ${antennae}
+      ${legs}
+      <ellipse cx="${cx}" cy="${cy}" rx="${bodyRx}" ry="${bodyRy}" fill="${bodyColor}" stroke="${darkColor}" stroke-width="2" />
+      <circle cx="${cx - 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
+      <circle cx="${cx + 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
+      <circle cx="${cx - 14}" cy="${cy - bodyRy * 0.58}" r="2.5" fill="white" />
+      <circle cx="${cx + 10}" cy="${cy - bodyRy * 0.58}" r="2.5" fill="white" />
+    </svg>
+  `;
+}
+
+const _portraitCache = {};
+function renderFlyPortrait(el2, cosmetic, hue, cacheKey) {
+  // Same rationale as updateMarquee: this runs on every snapshot (20Hz) but
+  // the underlying fly data only changes on mint/remint/new candidate, so
+  // skip re-injecting identical SVG markup.
+  const key = JSON.stringify({ cosmetic, hue });
+  if (_portraitCache[cacheKey] === key) return;
+  _portraitCache[cacheKey] = key;
+  el2.innerHTML = flySVG(cosmetic, hue);
+}
+
 function starString(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
 
 function renderTraits(container, cosmetic, chemistryStars) {
@@ -711,11 +778,11 @@ function applyState(state) {
 
   if (state.phase === "MINTING" && state.own_fly) {
     el("mint-name").textContent = state.name;
-    el("mint-photo").style.filter = `hue-rotate(${state.own_fly.hue}deg) saturate(1.6)`;
+    renderFlyPortrait(el("mint-photo"), state.own_fly.cosmetic, state.own_fly.hue, "lastMintKey");
     renderTraits(el("mint-traits"), state.own_fly.cosmetic, state.own_fly.chemistry_stars);
   }
   if (state.candidate) {
-    el("candidate-photo").style.filter = `hue-rotate(${state.candidate.hue}deg) saturate(1.6)`;
+    renderFlyPortrait(el("candidate-photo"), state.candidate.cosmetic, state.candidate.hue, "lastCandidateKey");
   }
   if (state.phase === "DATING" && state.candidate) {
     renderTraits(el("candidate-traits"), state.candidate.cosmetic);
