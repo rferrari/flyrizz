@@ -83,6 +83,13 @@
   .result-title.passed { color: var(--dim); }
   .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
   .status { text-align: center; font-size: 0.8rem; color: var(--dim); }
+  .footer-credit {
+    text-align: center; font-size: 0.72rem; color: var(--dim); line-height: 1.6;
+    padding: 4px 12px 0;
+  }
+  .footer-credit a { color: var(--accent2); text-decoration: none; }
+  .footer-credit a:hover { text-decoration: underline; }
+  .footer-credit code { background: #150a22; border-radius: 4px; padding: 1px 4px; font-size: 0.9em; }
   .share-btn { display: block; margin: 4px auto 0; }
   .billboard { padding: 14px 0; }
   .billboard-stat { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
@@ -314,6 +321,14 @@
         <div class="wallet-list" id="wallet-list"></div>
       </div>
     </details>
+  </div>
+
+  <div class="footer-credit">
+    Powered by real connectome data from
+    <a href="https://neuprint.janelia.org" target="_blank" rel="noopener">NeuPrint</a>
+    (Janelia FlyEM, <code>male-cns:v1.0</code>) &nbsp;·&nbsp;
+    Explore the connectome yourself at
+    <a href="https://www.virtualflybrain.org/" target="_blank" rel="noopener">Virtual Fly Brain</a>
   </div>
 
   <div class="status" id="status">connecting...</div>
