@@ -578,57 +578,253 @@ function updateMarquee(recentMatches) {
 // on every snapshot) and its hue, instead of a plain emoji + CSS hue-rotate.
 // Purely cosmetic, like the stats it visualizes -- doesn't touch da1/da2 or
 // any real simulation input. Deterministic per fly: same stats -> same art.
+let _flyUid = 0;
 function flySVG(cosmetic, hue) {
   const shimmer = cosmetic["Wing Shimmer"] || 3;
   const legLen = cosmetic["Leg Length"] || 3;
   const curl = cosmetic["Antennae Curl"] || 3;
   const confidence = cosmetic["Buzz Confidence"] || 3;
 
-  const bodyColor = `hsl(${hue}, 55%, 58%)`;
-  const darkColor = `hsl(${hue}, 45%, 30%)`;
-  const scale = 0.85 + confidence * 0.06; // bigger, bolder stance = more "confident"
-  const bodyRx = 34 * scale, bodyRy = 44 * scale;
-  const cx = 100, cy = 108;
+  // Top-down view, head at the top: head (eyes + antennae) -> thorax -> abdomen
+  // running down the Y axis. Every appendage hangs off that axis so the fly
+  // stays anatomically consistent however the stats scale it, and so the wings
+  // always sweep *backwards* from the thorax relative to the eyes.
+  const body = `hsl(${hue}, 52%, 56%)`;
+  const bodyLight = `hsl(${hue}, 58%, 70%)`;
+  const dark = `hsl(${hue}, 45%, 28%)`;
+  const darker = `hsl(${hue}, 48%, 16%)`;
+  const eyeHue = (hue + 340) % 360;
+  const uid = `f${_flyUid++}`; // gradient/clip/pattern ids must be unique per portrait
 
-  // Wings sit on top of (rendered after) the body, resting over the back
-  // like a real fly's folded wings -- rotated 180deg from an earlier version
-  // that had them flared up beside the head, behind the body.
-  const wingCx = cx, wingCy = cy - 6;
-  const wingOpacity = (0.22 + shimmer * 0.1).toFixed(2);
-  const wingHighlight = shimmer >= 4
-    ? `<ellipse cx="${wingCx - 8}" cy="${wingCy + 12}" rx="10" ry="22" fill="white" opacity="0.35" />`
+  const cx = 100;
+  const headY = 48, thoraxY = 88, abdomenY = 138;
+  const scale = 0.8 + confidence * 0.05; // bolder stance = bigger fly
+  const n = (v) => Math.round(v * 100) / 100;
+
+  // ---------------------------------------------------------------- wings
+  // Hinged at the rear corners of the thorax, sweeping back and outward over
+  // the abdomen the way a resting fly holds them: the tip is always *behind*
+  // (below) the hinge, so they can never read as flipped.
+  const hingeX = 13, hingeY = thoraxY - 6;
+  const wingOpacity = (0.28 + shimmer * 0.075).toFixed(2);
+  const wings = [-1, 1].map((s) => {
+    const hx = cx + s * hingeX, hy = hingeY;
+    const tipX = cx + s * 43, tipY = hy + 94;
+    // Leading (costal) edge bows out; trailing edge cuts back to the hinge.
+    const outline = `M ${hx} ${hy}`
+      + ` C ${cx + s * 56} ${hy + 14}, ${cx + s * 62} ${hy + 60}, ${tipX} ${tipY}`
+      + ` C ${cx + s * 28} ${hy + 66}, ${cx + s * 16} ${hy + 32}, ${hx} ${hy} Z`;
+    // Longitudinal veins fanning from the hinge toward the margin, plus the
+    // two cross-veins every calyptrate fly has midway down the blade.
+    const longVeins = [
+      [52, hy + 18, 46, hy + 62],
+      [46, hy + 30, 41, hy + 82],
+      [36, hy + 34, 33, hy + 88],
+      [27, hy + 34, 23, hy + 80],
+      [19, hy + 28, 15, hy + 64],
+    ].map(([mx, my, ex, ey]) =>
+      `<path d="M ${hx} ${hy} Q ${cx + s * mx} ${my} ${cx + s * ex} ${ey}" fill="none" stroke="${darker}" stroke-width="1" opacity="0.4" />`
+    ).join("");
+    const crossVeins = `
+      <path d="M ${cx + s * 40} ${hy + 44} L ${cx + s * 28} ${hy + 47}" stroke="${darker}" stroke-width="0.9" opacity="0.4" />
+      <path d="M ${cx + s * 44} ${hy + 62} L ${cx + s * 31} ${hy + 64}" stroke="${darker}" stroke-width="0.9" opacity="0.4" />`;
+    return `<g>
+      <path d="${outline}" fill="url(#wing${uid})" opacity="${wingOpacity}" />
+      <path d="${outline}" fill="none" stroke="${dark}" stroke-width="1.1" stroke-opacity="0.45" />
+      <path d="M ${hx} ${hy} C ${cx + s * 56} ${hy + 14}, ${cx + s * 62} ${hy + 60}, ${tipX} ${tipY}"
+            fill="none" stroke="${dark}" stroke-width="2" stroke-opacity="0.5" stroke-linecap="round" />
+      ${longVeins}${crossVeins}
+      <!-- alula: the small lobe at the wing base -->
+      <path d="M ${hx} ${hy + 2} C ${cx + s * 24} ${hy + 10}, ${cx + s * 24} ${hy + 26}, ${cx + s * 12} ${hy + 24} Z"
+            fill="url(#wing${uid})" opacity="${wingOpacity}" stroke="${dark}" stroke-width="0.9" stroke-opacity="0.35" />
+    </g>`;
+  }).join("");
+  // Iridescent sheen -- the actual "Wing Shimmer" stat made visible.
+  const sheen = shimmer >= 3
+    ? [-1, 1].map((s) => `
+        <ellipse cx="${cx + s * 35}" cy="${hingeY + 44}" rx="8" ry="22" fill="white"
+                 opacity="${(0.05 + shimmer * 0.045).toFixed(2)}"
+                 transform="rotate(${-s * 16} ${cx + s * 35} ${hingeY + 44})" />
+        <ellipse cx="${cx + s * 27}" cy="${hingeY + 66}" rx="5" ry="14" fill="var(--accent2)"
+                 opacity="${(0.04 + shimmer * 0.04).toFixed(2)}"
+                 transform="rotate(${-s * 22} ${cx + s * 27} ${hingeY + 66})" />`).join("")
     : "";
 
-  const legLength = 18 + legLen * 9;
-  const legs = [-1, 1].flatMap((side) => [0, 1, 2].map((i) => {
-    const y1 = cy - 6 + i * 16;
-    const x1 = cx + side * bodyRx * 0.7;
-    const x2 = x1 + side * legLength * 0.8;
-    const y2 = y1 + legLength * 0.6;
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${darkColor}" stroke-width="3" stroke-linecap="round" />`;
+  // Halteres -- the drumstick balancers behind the wings, a real dipteran tell.
+  const halteres = [-1, 1].map((s) =>
+    `<g stroke="${dark}" fill="${dark}">
+       <path d="M ${cx + s * 15} ${thoraxY + 12} Q ${cx + s * 23} ${thoraxY + 18} ${cx + s * 27} ${thoraxY + 26}"
+             stroke-width="2" fill="none" stroke-linecap="round" />
+       <ellipse cx="${cx + s * 28.5}" cy="${thoraxY + 28}" rx="3.6" ry="4.4" stroke="none" />
+     </g>`).join("");
+
+  // ----------------------------------------------------------------- legs
+  // Three pairs off the thorax -- fore reaching forward, mid out to the side,
+  // hind sweeping back -- each with coxa/femur/tibia and a segmented tarsus
+  // ending in claws, instead of a single straight line.
+  const L = 0.7 + legLen * 0.12;
+  // Reaches are tuned so even legLen=5 at confidence=5 stays inside the viewBox.
+  const legSpecs = [
+    { bx: 17, by: thoraxY - 15, fx: 22, fy: -15, tx: 11, ty: -19, tarsus: [8, -9] },
+    { bx: 23, by: thoraxY - 1, fx: 24, fy: 6, tx: 13, ty: 20, tarsus: [7, 13] },
+    { bx: 19, by: thoraxY + 14, fx: 21, fy: 20, tx: 8, ty: 25, tarsus: [3, 13] },
+  ];
+  const legs = [-1, 1].flatMap((s) => legSpecs.map((g) => {
+    const x0 = cx + s * g.bx, y0 = g.by;
+    const x1 = x0 + s * g.fx * L, y1 = y0 + g.fy * L;            // femur end (knee)
+    const x2 = x1 + s * g.tx * L, y2 = y1 + g.ty * L;            // tibia end
+    const x3 = x2 + s * g.tarsus[0] * L, y3 = y2 + g.tarsus[1] * L; // tarsus tip
+    // Tarsal segment ticks + two tiny claws at the tip.
+    const segs = [0.33, 0.66].map((t) => {
+      const px = x2 + (x3 - x2) * t, py = y2 + (y3 - y2) * t;
+      return `<circle cx="${n(px)}" cy="${n(py)}" r="1.5" fill="${darker}" />`;
+    }).join("");
+    // Bristles along the tibia.
+    const hairs = [0.3, 0.6, 0.85].map((t) => {
+      const px = x1 + (x2 - x1) * t, py = y1 + (y2 - y1) * t;
+      return `<line x1="${n(px)}" y1="${n(py)}" x2="${n(px + s * 5)}" y2="${n(py - 4)}"
+                    stroke="${darker}" stroke-width="1" opacity="0.6" stroke-linecap="round" />`;
+    }).join("");
+    return `<g stroke-linecap="round" fill="none">
+      <path d="M ${n(x0)} ${n(y0)} L ${n(x1)} ${n(y1)}" stroke="${darker}" stroke-width="5.5" opacity="0.55" />
+      <path d="M ${n(x0)} ${n(y0)} L ${n(x1)} ${n(y1)}" stroke="${dark}" stroke-width="4" />
+      <path d="M ${n(x1)} ${n(y1)} L ${n(x2)} ${n(y2)}" stroke="${dark}" stroke-width="2.6" />
+      <path d="M ${n(x2)} ${n(y2)} L ${n(x3)} ${n(y3)}" stroke="${dark}" stroke-width="1.8" />
+      <circle cx="${n(x1)}" cy="${n(y1)}" r="2.4" fill="${dark}" stroke="none" />
+      ${segs}${hairs}
+      <path d="M ${n(x3)} ${n(y3)} l ${n(s * 3)} 3 M ${n(x3)} ${n(y3)} l ${n(s * -1)} 4"
+            stroke="${darker}" stroke-width="1.2" />
+    </g>`;
   })).join("");
 
-  const curlOffset = curl * 10;
-  const antennae = [-1, 1].map((side) => {
-    const baseX = cx + side * 10, baseY = cy - bodyRy * 0.85;
-    const ctrlX = baseX + side * (10 + curlOffset), ctrlY = baseY - 30;
-    const endX = baseX + side * (2 + curlOffset * 1.4), endY = baseY - 44;
-    return `<path d="M ${baseX} ${baseY} Q ${ctrlX} ${ctrlY} ${endX} ${endY}" stroke="${darkColor}" stroke-width="2.5" fill="none" stroke-linecap="round" />
-            <circle cx="${endX}" cy="${endY}" r="3" fill="${darkColor}" />`;
+  // ------------------------------------------------------------- antennae
+  // Off the front of the head: scape, pedicel, then the flat arista that
+  // curls harder the higher the "Antennae Curl" stat runs.
+  const curlAmt = 3 + curl * 4;
+  const antennae = [-1, 1].map((s) => {
+    const bx = cx + s * 7, by = headY - 13;
+    const px = bx + s * 3, py = by - 9;                       // pedicel joint
+    const ex = px + s * (curlAmt * 0.5), ey = py - 11;        // funiculus tip
+    const aristaX = ex + s * curlAmt, aristaY = ey - 9;       // arista tip
+    return `
+      <path d="M ${n(bx)} ${n(by)} L ${n(px)} ${n(py)}" stroke="${dark}" stroke-width="3" stroke-linecap="round" />
+      <ellipse cx="${n(ex)}" cy="${n(ey)}" rx="4" ry="6" fill="${dark}"
+               transform="rotate(${s * 20} ${n(ex)} ${n(ey)})" />
+      <path d="M ${n(ex)} ${n(ey - 3)} Q ${n(ex + s * curlAmt * 0.8)} ${n(ey - 10)} ${n(aristaX)} ${n(aristaY)}"
+            fill="none" stroke="${dark}" stroke-width="1.6" stroke-linecap="round" />
+      ${[0.35, 0.7].map((t) => {
+        const hx2 = ex + (aristaX - ex) * t, hy2 = ey - 3 + (aristaY - (ey - 3)) * t;
+        return `<line x1="${n(hx2)}" y1="${n(hy2)}" x2="${n(hx2 - s * 4)}" y2="${n(hy2 - 3)}"
+                      stroke="${dark}" stroke-width="1" opacity="0.7" stroke-linecap="round" />`;
+      }).join("")}`;
   }).join("");
+
+  // Tapered abdomen outline, reused for both the fill and the band clip.
+  const abdomenPath = `M ${cx - 26} ${abdomenY - 30}`
+    + ` C ${cx - 30} ${abdomenY - 2}, ${cx - 19} ${abdomenY + 30}, ${cx} ${abdomenY + 36}`
+    + ` C ${cx + 19} ${abdomenY + 30}, ${cx + 30} ${abdomenY - 2}, ${cx + 26} ${abdomenY - 30}`
+    + ` C ${cx + 14} ${abdomenY - 40}, ${cx - 14} ${abdomenY - 40}, ${cx - 26} ${abdomenY - 30} Z`;
+
+  // Tergite bands: each abdominal segment gets a dark posterior margin.
+  const bands = [-18, -5, 8, 21].map((dy, i) => `
+    <path d="M ${cx - 32} ${abdomenY + dy} Q ${cx} ${abdomenY + dy + 7} ${cx + 32} ${abdomenY + dy}
+             L ${cx + 32} ${abdomenY + dy + 6} Q ${cx} ${abdomenY + dy + 13} ${cx - 32} ${abdomenY + dy + 6} Z"
+          fill="${darker}" opacity="${0.34 - i * 0.03}" />`).join("");
+
+  // Bristles along the body margins -- the fuzz that makes it read as a fly.
+  const bristles = [-1, 1].flatMap((s) =>
+    [[25, thoraxY - 14, -9], [27, thoraxY - 1, 1], [25, thoraxY + 12, 8],
+     [25, abdomenY - 18, 8], [27, abdomenY - 2, 12], [22, abdomenY + 16, 12]]
+      .map(([bx, by, dy]) =>
+        `<line x1="${cx + s * bx}" y1="${by}" x2="${cx + s * (bx + 8)}" y2="${by + dy}"
+               stroke="${darker}" stroke-width="1.3" stroke-linecap="round" opacity="0.55" />`)).join("");
 
   return `
     <svg viewBox="0 0 200 200" width="100%" height="100%" style="max-height:100%">
-      ${antennae}
-      ${legs}
-      <ellipse cx="${cx}" cy="${cy}" rx="${bodyRx}" ry="${bodyRy}" fill="${bodyColor}" stroke="${darkColor}" stroke-width="2" />
-      <ellipse cx="${wingCx - 26}" cy="${wingCy}" rx="26" ry="42" fill="var(--accent2)" opacity="${wingOpacity}" transform="rotate(160 ${wingCx - 26} ${wingCy})" />
-      <ellipse cx="${wingCx + 26}" cy="${wingCy}" rx="26" ry="42" fill="var(--accent)" opacity="${wingOpacity}" transform="rotate(-160 ${wingCx + 26} ${wingCy})" />
-      ${wingHighlight}
-      <circle cx="${cx - 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
-      <circle cx="${cx + 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
-      <circle cx="${cx - 14}" cy="${cy - bodyRy * 0.58}" r="2.5" fill="white" />
-      <circle cx="${cx + 10}" cy="${cy - bodyRy * 0.58}" r="2.5" fill="white" />
+      <defs>
+        <linearGradient id="wing${uid}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" />
+          <stop offset="55%" stop-color="var(--accent2)" />
+          <stop offset="100%" stop-color="var(--accent)" />
+        </linearGradient>
+        <radialGradient id="eye${uid}" cx="0.32" cy="0.26" r="0.85">
+          <stop offset="0%" stop-color="hsl(${eyeHue}, 65%, 58%)" />
+          <stop offset="60%" stop-color="hsl(${eyeHue}, 58%, 40%)" />
+          <stop offset="100%" stop-color="hsl(${eyeHue}, 55%, 26%)" />
+        </radialGradient>
+        <radialGradient id="thorax${uid}" cx="0.34" cy="0.26" r="0.9">
+          <stop offset="0%" stop-color="${bodyLight}" />
+          <stop offset="100%" stop-color="${body}" />
+        </radialGradient>
+        <radialGradient id="abdo${uid}" cx="0.35" cy="0.2" r="0.95">
+          <stop offset="0%" stop-color="${bodyLight}" />
+          <stop offset="100%" stop-color="${body}" />
+        </radialGradient>
+        <!-- ommatidia: the hex-ish facet grid of a compound eye -->
+        <pattern id="facet${uid}" width="4.4" height="3.8" patternUnits="userSpaceOnUse">
+          <circle cx="1.1" cy="0.95" r="1.5" fill="${darker}" opacity="0.28" />
+          <circle cx="3.3" cy="2.85" r="1.5" fill="${darker}" opacity="0.28" />
+        </pattern>
+        <clipPath id="abd${uid}"><path d="${abdomenPath}" /></clipPath>
+        <clipPath id="eyeL${uid}">
+          <ellipse cx="${cx - 13}" cy="${headY - 1}" rx="12.5" ry="15.5" transform="rotate(-12 ${cx - 13} ${headY - 1})" />
+        </clipPath>
+        <clipPath id="eyeR${uid}">
+          <ellipse cx="${cx + 13}" cy="${headY - 1}" rx="12.5" ry="15.5" transform="rotate(12 ${cx + 13} ${headY - 1})" />
+        </clipPath>
+      </defs>
+      <g transform="translate(${cx} 110) scale(${scale.toFixed(3)}) translate(${-cx} -110)">
+        <ellipse cx="${cx}" cy="182" rx="40" ry="7" fill="${darker}" opacity="0.14" />
+        ${antennae}
+        ${legs}
+        ${halteres}
+
+        <!-- abdomen -->
+        <path d="${abdomenPath}" fill="url(#abdo${uid})" stroke="${dark}" stroke-width="2" />
+        <g clip-path="url(#abd${uid})">
+          ${bands}
+          <ellipse cx="${cx - 10}" cy="${abdomenY - 14}" rx="8" ry="17" fill="white" opacity="0.13" />
+          <path d="M ${cx} ${abdomenY - 34} L ${cx} ${abdomenY + 34}" stroke="${darker}" stroke-width="1.6" opacity="0.22" />
+        </g>
+
+        <!-- thorax: scutum stripes, scutellum, spiracles -->
+        <ellipse cx="${cx}" cy="${thoraxY}" rx="27" ry="27" fill="url(#thorax${uid})" stroke="${dark}" stroke-width="2" />
+        <path d="M ${cx - 10} ${thoraxY - 22} L ${cx - 9} ${thoraxY + 16}" stroke="${darker}" stroke-width="3" opacity="0.3" stroke-linecap="round" />
+        <path d="M ${cx + 10} ${thoraxY - 22} L ${cx + 9} ${thoraxY + 16}" stroke="${darker}" stroke-width="3" opacity="0.3" stroke-linecap="round" />
+        <path d="M ${cx} ${thoraxY - 24} L ${cx} ${thoraxY + 14}" stroke="${darker}" stroke-width="1.6" opacity="0.22" stroke-linecap="round" />
+        <path d="M ${cx - 14} ${thoraxY + 19} Q ${cx} ${thoraxY + 34} ${cx + 14} ${thoraxY + 19} Z"
+              fill="${body}" stroke="${dark}" stroke-width="1.6" />
+        <ellipse cx="${cx - 25}" cy="${thoraxY + 4}" rx="2" ry="3" fill="${darker}" opacity="0.45" />
+        <ellipse cx="${cx + 25}" cy="${thoraxY + 4}" rx="2" ry="3" fill="${darker}" opacity="0.45" />
+        ${bristles}
+
+        <!-- head: proboscis forward, compound eyes wrapping the sides, ocelli on top -->
+        <path d="M ${cx - 6} ${headY + 14} Q ${cx} ${headY + 30} ${cx + 6} ${headY + 14} Z" fill="${dark}" />
+        <ellipse cx="${cx}" cy="${headY + 26}" rx="5" ry="4" fill="${darker}" opacity="0.85" />
+        <ellipse cx="${cx}" cy="${headY}" rx="21" ry="18.5" fill="${body}" stroke="${dark}" stroke-width="2" />
+        <ellipse cx="${cx - 13}" cy="${headY - 1}" rx="12.5" ry="15.5" fill="url(#eye${uid})"
+                 stroke="${darker}" stroke-width="1.5" transform="rotate(-12 ${cx - 13} ${headY - 1})" />
+        <ellipse cx="${cx + 13}" cy="${headY - 1}" rx="12.5" ry="15.5" fill="url(#eye${uid})"
+                 stroke="${darker}" stroke-width="1.5" transform="rotate(12 ${cx + 13} ${headY - 1})" />
+        <rect x="${cx - 30}" y="${headY - 20}" width="35" height="36" fill="url(#facet${uid})" clip-path="url(#eyeL${uid})" />
+        <rect x="${cx - 5}" y="${headY - 20}" width="35" height="36" fill="url(#facet${uid})" clip-path="url(#eyeR${uid})" />
+        <ellipse cx="${cx - 16}" cy="${headY - 7}" rx="3.6" ry="4.8" fill="white" opacity="0.7"
+                 transform="rotate(-12 ${cx - 16} ${headY - 7})" />
+        <ellipse cx="${cx + 10}" cy="${headY - 7}" rx="3.6" ry="4.8" fill="white" opacity="0.7"
+                 transform="rotate(12 ${cx + 10} ${headY - 7})" />
+        <ellipse cx="${cx - 11}" cy="${headY + 7}" rx="2" ry="2.6" fill="white" opacity="0.3" />
+        <ellipse cx="${cx + 15}" cy="${headY + 7}" rx="2" ry="2.6" fill="white" opacity="0.3" />
+        <!-- frons + the three ocelli -->
+        <path d="M ${cx - 5} ${headY - 16} Q ${cx} ${headY - 19} ${cx + 5} ${headY - 16} L ${cx + 4} ${headY + 4} Q ${cx} ${headY + 6} ${cx - 4} ${headY + 4} Z"
+              fill="${bodyLight}" stroke="${dark}" stroke-width="1" opacity="0.9" />
+        <circle cx="${cx}" cy="${headY - 14}" r="1.7" fill="${darker}" opacity="0.75" />
+        <circle cx="${cx - 3.4}" cy="${headY - 11}" r="1.4" fill="${darker}" opacity="0.75" />
+        <circle cx="${cx + 3.4}" cy="${headY - 11}" r="1.4" fill="${darker}" opacity="0.75" />
+
+        <!-- wings last: translucent, resting back over the abdomen -->
+        ${wings}
+        ${sheen}
+      </g>
     </svg>
   `;
 }
