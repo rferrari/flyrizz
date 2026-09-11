@@ -260,8 +260,8 @@
           <div class="trait-list" id="candidate-traits"></div>
         </div>
         <div class="btn-row">
-          <button class="secondary" id="btn-swipe-left">👎 Pass</button>
-          <button id="btn-swipe-right">👍 Like</button>
+          <button class="secondary" id="btn-swipe-left">⬅ Pass</button>
+          <button id="btn-swipe-right">Like ➡</button>
         </div>
       </div>
 
@@ -590,9 +590,13 @@ function flySVG(cosmetic, hue) {
   const bodyRx = 34 * scale, bodyRy = 44 * scale;
   const cx = 100, cy = 108;
 
+  // Wings sit on top of (rendered after) the body, resting over the back
+  // like a real fly's folded wings -- rotated 180deg from an earlier version
+  // that had them flared up beside the head, behind the body.
+  const wingCx = cx, wingCy = cy - 6;
   const wingOpacity = (0.22 + shimmer * 0.1).toFixed(2);
   const wingHighlight = shimmer >= 4
-    ? `<ellipse cx="${cx - 8}" cy="${cy - 40}" rx="10" ry="22" fill="white" opacity="0.35" />`
+    ? `<ellipse cx="${wingCx - 8}" cy="${wingCy + 12}" rx="10" ry="22" fill="white" opacity="0.35" />`
     : "";
 
   const legLength = 18 + legLen * 9;
@@ -615,12 +619,12 @@ function flySVG(cosmetic, hue) {
 
   return `
     <svg viewBox="0 0 200 200" width="100%" height="100%" style="max-height:100%">
-      <ellipse cx="${cx - 30}" cy="${cy - 30}" rx="26" ry="42" fill="var(--accent2)" opacity="${wingOpacity}" transform="rotate(-20 ${cx - 30} ${cy - 30})" />
-      <ellipse cx="${cx + 30}" cy="${cy - 30}" rx="26" ry="42" fill="var(--accent)" opacity="${wingOpacity}" transform="rotate(20 ${cx + 30} ${cy - 30})" />
-      ${wingHighlight}
       ${antennae}
       ${legs}
       <ellipse cx="${cx}" cy="${cy}" rx="${bodyRx}" ry="${bodyRy}" fill="${bodyColor}" stroke="${darkColor}" stroke-width="2" />
+      <ellipse cx="${wingCx - 26}" cy="${wingCy}" rx="26" ry="42" fill="var(--accent2)" opacity="${wingOpacity}" transform="rotate(160 ${wingCx - 26} ${wingCy})" />
+      <ellipse cx="${wingCx + 26}" cy="${wingCy}" rx="26" ry="42" fill="var(--accent)" opacity="${wingOpacity}" transform="rotate(-160 ${wingCx + 26} ${wingCy})" />
+      ${wingHighlight}
       <circle cx="${cx - 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
       <circle cx="${cx + 12}" cy="${cy - bodyRy * 0.55}" r="9" fill="${darkColor}" />
       <circle cx="${cx - 14}" cy="${cy - bodyRy * 0.58}" r="2.5" fill="white" />
@@ -766,6 +770,12 @@ function applyState(state) {
         ? "You swiped left -- no interaction happened."
         : `Real DNp13 output: ${state.accept.toExponential(2)} (threshold ${state.match_threshold.toExponential(2)})`;
       el("btn-share-result").style.display = state.result === "MATCH" ? "inline-block" : "none";
+      // A pass needed no real brain interaction, so don't make the player
+      // click through it -- show it briefly, then auto-advance.
+      el("btn-next").style.display = state.result === "PASSED" ? "none" : "inline-block";
+      if (state.result === "PASSED") {
+        setTimeout(() => send({ type: "next" }, { blocking: true }), 1000);
+      }
     } else if (state.phase === "DEAD") {
       el("dating-block").style.display = "none";
       el("eval-block").style.display = "none";
