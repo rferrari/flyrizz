@@ -185,10 +185,10 @@
   </div>
 
   <!-- BILLBOARD: always visible, populates as soon as the first snapshot arrives -->
-  <div class="panel billboard">
-    <div class="center billboard-stat" id="billboard-stat">🎉 -- real matches made by real Drosophila brains</div>
+  <div class="panel billboard" id="billboard-panel" style="display:none">
+    <div class="center billboard-stat" id="billboard-stat"></div>
     <div class="marquee" id="marquee">
-      <div class="marquee-track" id="marquee-track">🪰 Loading real matches...</div>
+      <div class="marquee-track" id="marquee-track"></div>
     </div>
   </div>
 
@@ -308,7 +308,7 @@
 
   <div class="panel">
     <details>
-      <summary>💛 Support the dev</summary>
+      <summary>Support devs</summary>
       <div class="how-it-works">
         <p>FlyRizz is free to play. If you'd like to support development, here's where:</p>
         <div class="wallet-list" id="wallet-list"></div>
@@ -524,11 +524,15 @@ function updateMarquee(recentMatches) {
 
   const track = el("marquee-track");
   if (!recentMatches || recentMatches.length === 0) {
-    track.textContent = "🪰 No matches yet... be the first!";
+    track.textContent = "No matches yet... be the first fly to find love!";
     return;
   }
+  const phrases = [
+    "found love!", "found The One!", "got matched!", "found their soulmate!",
+    "swiped their way to romance!", "is officially coupled up!", "found their buzz match!",
+  ];
   track.innerHTML = recentMatches
-    .map((m) => `🪰 <b>${m.fly_name}</b> found a match!`)
+    .map((m, i) => `<b>${m.fly_name}</b> ${phrases[i % phrases.length]}`)
     .join("&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;");
 }
 
@@ -706,8 +710,16 @@ function applyState(state) {
   }
 
   if (typeof state.total_matches === "number") {
-    el("billboard-stat").textContent =
-      `🎉 ${state.total_matches} real match${state.total_matches === 1 ? "" : "es"} made by real Drosophila brains`;
+    el("billboard-panel").style.display = "block";
+    const n = state.total_matches;
+    const templates = [
+      `We've helped ${n} fl${n === 1 ? "y" : "ies"} find love (their real brains did the swiping)`,
+      `${n} fl${n === 1 ? "y has" : "ies have"} coupled up here`,
+      `${n} real fly romance${n === 1 ? "" : "s"}, verified by actual neurons`,
+      `${n} fl${n === 1 ? "y" : "ies"} left here in a relationship`,
+      `${n} fl${n === 1 ? "y" : "ies"} found their soulmate (probably)`,
+    ];
+    el("billboard-stat").textContent = templates[n % templates.length];
   }
   updateMarquee(state.recent_matches);
 
