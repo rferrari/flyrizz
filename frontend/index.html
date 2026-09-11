@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Fly Speed Dating</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #12081a;
+    --panel: #1e1030;
+    --accent: #ff5fa2;
+    --accent2: #7c5cff;
+    --text: #f2eaff;
+    --dim: #a794c9;
+    --good: #4be08a;
+    --bad: #ff5c6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% -10%, #2a1440, var(--bg));
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .app {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    margin: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle { text-align: center; color: var(--dim); font-size: 0.85rem; margin-top: -8px; }
+  .panel {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+  }
+  .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--dim); }
+  .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .stat-row b { color: var(--text); }
+  .slider-block { margin-top: 14px; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
+  .slider-label span:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent2);
+  }
+  .timer-bar, .progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #2c1c40;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .timer-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.1s linear; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4be08a, #7c5cff); transition: width 0.1s linear; }
+  .meter-block { margin-top: 16px; }
+  .meter-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: var(--dim); }
+  .meter-bar { position: relative; height: 22px; border-radius: 11px; background: #2c1c40; overflow: hidden; }
+  .meter-fill { height: 100%; background: linear-gradient(90deg, #7c5cff, #ff5fa2); transition: width 0.15s ease-out; }
+  .meter-threshold { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; opacity: 0.7; }
+  .result-screen { text-align: center; padding: 20px 0; }
+  .result-title { font-size: 2.2rem; font-weight: 800; margin: 4px 0 6px; }
+  .result-title.match { color: var(--good); }
+  .result-title.reject { color: var(--bad); }
+  .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
+  button {
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border: none;
+    color: white;
+    padding: 12px 28px;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .status { text-align: center; font-size: 0.8rem; color: var(--dim); }
+  .status.connected { color: var(--good); }
+  .fly-stage { display: flex; justify-content: space-around; align-items: center; height: 70px; font-size: 2.4rem; }
+  .fly-stage .him { transform: scaleX(-1); }
+  .fly-stage .her { transition: transform 0.3s ease-out; }
+  .caption { text-align: center; font-size: 0.75rem; color: var(--dim); margin-top: -4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Fly Speed Dating</h1>
+  <div class="subtitle">One real Drosophila connectome (male-cns:v1.0). "Him" and "Her" are the same brain -- you tune the input, it judges the output.</div>
+
+  <div class="panel">
+    <div class="stat-row"><span>Round <b id="round">1</b></span><span>Matches: <b id="matches">0</b></span></div>
+    <div class="fly-stage">
+      <span class="him">🪰</span>
+      <span class="her" id="her-fly">🪰</span>
+    </div>
+    <div class="caption">Male Suitor Console (you) &nbsp;→&nbsp; Her Brain (real pC1/aSP → DNp13/DNa01)</div>
+  </div>
+
+  <div class="panel" id="tuning-panel">
+    <div class="row"><span id="phase-label">Tune your pheromone blend</span><span id="timer-text">15.0s</span></div>
+    <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+
+    <div class="slider-block">
+      <div class="slider-label"><span>DA1 (cVA, strong signal)</span><span id="da1-val">0.00</span></div>
+      <input type="range" id="da1" min="0" max="1" step="0.01" value="0" />
+    </div>
+    <div class="slider-block">
+      <div class="slider-label"><span>DA2 (cVA, subtle signal)</span><span id="da2-val">0.00</span></div>
+      <input type="range" id="da2" min="0" max="1" step="0.01" value="0" />
+    </div>
+
+    <div class="meter-block">
+      <div class="meter-label"><span id="meter-label-text">Her brain activity</span><span id="meter-val">0%</span></div>
+      <div class="meter-bar">
+        <div class="meter-fill" id="meter-fill" style="width:0%"></div>
+        <div class="meter-threshold" style="left:60%"></div>
+      </div>
+    </div>
+    <div class="progress-bar" id="eval-bar" style="display:none"><div class="progress-fill" id="eval-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="panel result-screen" id="result-panel" style="display:none">
+    <div class="result-title" id="result-title">MATCH!</div>
+    <div class="result-sub" id="result-sub">Her real DNp13 output crossed threshold.</div>
+    <button id="next-btn">Next Date</button>
+  </div>
+
+  <div class="status" id="status">connecting...</div>
+</div>
+
+<script>
+const WS_URL = "ws://localhost:8766";
+let ws = null;
+let lastPhase = null;
+
+const el = (id) => document.getElementById(id);
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => { el("status").textContent = "connected"; el("status").classList.add("connected"); };
+  ws.onclose = () => {
+    el("status").textContent = "disconnected -- retrying...";
+    el("status").classList.remove("connected");
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => ws.close();
+  ws.onmessage = (event) => applyState(JSON.parse(event.data));
+}
+
+function sendBlend() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: "set_blend", da1: parseFloat(el("da1").value), da2: parseFloat(el("da2").value) }));
+}
+
+el("da1").addEventListener("input", () => { el("da1-val").textContent = el("da1").value; sendBlend(); });
+el("da2").addEventListener("input", () => { el("da2-val").textContent = el("da2").value; sendBlend(); });
+
+el("next-btn").addEventListener("click", () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: "next_round" }));
+});
+
+function applyState(state) {
+  el("round").textContent = state.round;
+  el("matches").textContent = state.matches;
+
+  if (state.phase !== lastPhase) {
+    lastPhase = state.phase;
+    if (state.phase === "TUNING") {
+      el("da1").value = 0; el("da2").value = 0;
+      el("da1-val").textContent = "0.00"; el("da2-val").textContent = "0.00";
+      el("da1").disabled = false; el("da2").disabled = false;
+      el("tuning-panel").style.display = "block";
+      el("result-panel").style.display = "none";
+      el("eval-bar").style.display = "none";
+      el("phase-label").textContent = "Tune your pheromone blend";
+      el("her-fly").style.transform = "translateX(0)";
+    } else if (state.phase === "EVALUATION") {
+      el("da1").disabled = true; el("da2").disabled = true;
+      el("phase-label").textContent = "Her real brain is deciding...";
+      el("timer-text").textContent = "";
+      el("timer-fill").style.width = "0%";
+      el("eval-bar").style.display = "block";
+    } else if (state.phase === "RESULT") {
+      el("tuning-panel").style.display = "none";
+      el("result-panel").style.display = "block";
+      const match = state.result === "MATCH";
+      const title = el("result-title");
+      title.textContent = match ? "MATCH!" : "NOPE.";
+      title.className = "result-title " + (match ? "match" : "reject");
+      el("result-sub").textContent = match
+        ? `Her real DNp13 output (${state.accept.toExponential(2)}) crossed the threshold.`
+        : `Her real DNp13 output (${state.accept.toExponential(2)}) fell short of ${state.match_threshold.toExponential(2)}.`;
+      el("her-fly").style.transform = match ? "translateX(24px)" : "translateX(-12px)";
+    }
+  }
+
+  if (state.phase === "TUNING") {
+    el("timer-text").textContent = state.time_left.toFixed(1) + "s";
+    el("timer-fill").style.width = (100 * state.time_left / 15.0) + "%";
+  }
+  if (state.phase === "EVALUATION") {
+    el("eval-fill").style.width = (100 * state.eval_progress) + "%";
+  }
+  if (state.phase !== "RESULT") {
+    const meterPct = Math.min(100, 100 * state.accept / state.match_threshold / 1.67);
+    el("meter-fill").style.width = meterPct + "%";
+    el("meter-val").textContent = Math.round(100 * state.accept / state.match_threshold) + "% of match threshold";
+  }
+}
+
+connect();
+</script>
+</body>
+</html>
