@@ -7,6 +7,7 @@ required, since anon/authenticated only have read policies -- see the
 """
 
 import os
+import time
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -16,6 +17,16 @@ from supabase import Client, create_client
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
 
 _client: Client | None = None
+
+# get_stats() is read on every snapshot -- i.e. every server tick (20Hz) for
+# every connected client, regardless of whether the leaderboard actually
+# changed. Without caching that's 20 Supabase requests/sec/client for data
+# that changes maybe once every few minutes. A short shared (module-level,
+# so every connection benefits) TTL cache cuts that to ~1 request per
+# CACHE_TTL_SECONDS total, no matter how many clients are connected.
+CACHE_TTL_SECONDS = 3.0
+_stats_cache: dict | None = None
+_stats_cache_ts: float = 0.0
 
 
 def _get_client() -> Client:
@@ -74,3 +85,25 @@ def top(n: int = 10) -> list[dict]:
         .execute()
     )
     return result.data
+
+
+def count_players() -> int:
+    """Total distinct flies ever named -- i.e. every row in `leaderboard`,
+    one per name (see ensure_player -- a reused name doesn't add a new row).
+    """
+    c = _get_client()
+    result = c.table("leaderboard").select("name", count="exact").limit(0).execute()
+    return result.count or 0
+
+
+def get_stats(n: int = 10) -> dict:
+    """Cached `{top, total_flies}` -- see CACHE_TTL_SECONDS above. Called on
+    every snapshot, so this is the only leaderboard read that matters for
+    request volume.
+    """
+    global _stats_cache, _stats_cache_ts
+    now = time.monotonic()
+    if _stats_cache is None or (now - _stats_cache_ts) > CACHE_TTL_SECONDS:
+        _stats_cache = {"top": top(n), "total_flies": count_players()}
+        _stats_cache_ts = now
+    return _stats_cache

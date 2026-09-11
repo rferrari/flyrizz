@@ -252,7 +252,8 @@
   </div>
 
   <div class="panel" id="screen-leaderboard">
-    <div class="center" style="margin-bottom:8px">🏆 Leaderboard</div>
+    <div class="center" style="margin-bottom:2px">🏆 Leaderboard</div>
+    <div class="center subtitle" id="total-flies" style="margin-bottom:8px">🪰 -- flies have played FlyRizz</div>
     <table class="lb"><thead><tr><th>Name</th><th>Role</th><th>Matches</th></tr></thead><tbody id="lb-body"></tbody></table>
   </div>
 
@@ -653,6 +654,10 @@ function applyState(state) {
     el("hearts-row").textContent = "❤️".repeat(Math.max(0, state.hearts)) + "🖤".repeat(Math.max(0, 3 - state.hearts));
   } else {
     el("hearts-row").textContent = "∞ patience";
+  }
+
+  if (typeof state.total_flies === "number") {
+    el("total-flies").textContent = `🪰 ${state.total_flies} fl${state.total_flies === 1 ? "y has" : "ies have"} played FlyRizz`;
   }
 
   const lbBody = el("lb-body");

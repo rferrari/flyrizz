@@ -263,6 +263,7 @@ class GameSession:
             self.phase = "RESULT"
 
     def snapshot(self) -> dict:
+        stats = leaderboard.get_stats(10)
         return {
             "phase": self.phase,
             "role": self.role,
@@ -289,7 +290,8 @@ class GameSession:
             "turn_diff": self.last_turn_diff,
             "match_threshold": MATCH_THRESHOLD,
             "result": self.last_result,
-            "leaderboard": leaderboard.top(10),
+            "leaderboard": stats["top"],
+            "total_flies": stats["total_flies"],
         }
 
 
