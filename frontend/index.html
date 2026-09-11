@@ -109,6 +109,19 @@
     font-size: 0.82em;
   }
   .how-it-works b { color: var(--text); }
+  .wallet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .wallet-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #150a22; border: 1px solid #2c1c40; border-radius: 10px; padding: 8px 12px;
+  }
+  .wallet-row .chain { font-weight: 600; color: var(--text); font-size: 0.8rem; min-width: 62px; }
+  .wallet-row .addr {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 0.72rem;
+    color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .wallet-row button {
+    padding: 6px 12px; font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
+  }
   .fly-card { display: flex; justify-content: center; gap: 14px; align-items: center; }
   .role-choice { display: flex; gap: 14px; }
   .role-choice > div {
@@ -268,6 +281,16 @@
     </details>
   </div>
 
+  <div class="panel">
+    <details>
+      <summary>💛 Support the dev</summary>
+      <div class="how-it-works">
+        <p>FlyRizz is free to play. If you'd like to support development, here's where:</p>
+        <div class="wallet-list" id="wallet-list"></div>
+      </div>
+    </details>
+  </div>
+
   <div class="status" id="status">connecting...</div>
 </div>
 
@@ -422,6 +445,37 @@ el("share-btn").addEventListener("click", () => shareOrCopy({
   text: "A real Drosophila brain decides who matches. Mint a fly, swipe on dates -- FlyRizz:",
   url: SITE_URL,
 }));
+
+const DONATION_WALLETS = [
+  { chain: "Solana", address: "Dk1Cr7ow24HfakoDSwasKbs9fTfGYHaRdjXNKNHSnspA" },
+  { chain: "EVM", address: "0xe7B482C108EB044a0c25922B3657502D483A3227" },
+  { chain: "Zcash", address: "t1RJkU6zmhmP7b8gCYsAYgtt9paQTp9Q6Xa" },
+  { chain: "BTC", address: "bc1qvwyspwwwksccpzn8tdfg8u6amq59qtenknu5dl" },
+];
+
+function renderWallets() {
+  const container = el("wallet-list");
+  container.innerHTML = "";
+  DONATION_WALLETS.forEach(({ chain, address }) => {
+    const row = document.createElement("div");
+    row.className = "wallet-row";
+    row.innerHTML = `<span class="chain">${chain}</span><span class="addr">${address}</span>`;
+    const btn = document.createElement("button");
+    btn.className = "secondary";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(address);
+        showToast(`${chain} address copied!`);
+      } catch (e) {
+        showToast("Couldn't copy -- select the address manually.");
+      }
+    });
+    row.appendChild(btn);
+    container.appendChild(row);
+  });
+}
+renderWallets();
 
 el("btn-share-result").addEventListener("click", () => {
   const name = lastState?.name || "My fly";
