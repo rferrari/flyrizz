@@ -71,6 +71,19 @@
   table.lb th, table.lb td { text-align: left; padding: 4px 6px; color: var(--dim); }
   table.lb td:first-child, table.lb th:first-child { color: var(--text); }
   table.lb tr:nth-child(1) td { color: gold; }
+  details summary {
+    cursor: pointer; font-weight: 600; list-style: none; outline: none;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "▸ "; color: var(--accent); }
+  details[open] summary::before { content: "▾ "; }
+  .how-it-works { margin-top: 12px; font-size: 0.85rem; color: var(--dim); }
+  .how-it-works p { margin: 0 0 10px; line-height: 1.5; }
+  .how-it-works code {
+    background: #150a22; border-radius: 4px; padding: 1px 5px; color: var(--text);
+    font-size: 0.82em;
+  }
+  .how-it-works b { color: var(--text); }
   .fly-card { display: flex; justify-content: center; gap: 14px; align-items: center; }
   .role-choice { display: flex; gap: 14px; }
   .role-choice > div {
@@ -112,7 +125,7 @@
 <body>
 <div class="app">
   <h1>FlyRizz</h1>
-  <div class="subtitle">One real Drosophila connectome (male-cns:v1.0). Cosmetic traits are flavor; DA1/DA2, pC1/aSP, DNp13, DNa01 are real.</div>
+  <div class="subtitle">One real Drosophila connectome (male-cns:v1.0, ~8.6k-neuron courtship subgraph). Cosmetic traits are flavor; DA1/DA2, pC1/aSP, DNp13, DNa01 are real.</div>
 
   <!-- ROLE SELECT -->
   <div class="panel" id="screen-role" style="display:none">
@@ -197,6 +210,31 @@
   <div class="panel" id="screen-leaderboard">
     <div class="center" style="margin-bottom:8px">🏆 Leaderboard</div>
     <table class="lb"><thead><tr><th>Name</th><th>Role</th><th>Matches</th></tr></thead><tbody id="lb-body"></tbody></table>
+  </div>
+
+  <div class="panel">
+    <details>
+      <summary>How it works</summary>
+      <div class="how-it-works">
+        <p><b>Real:</b> your pheromone blend lives on two real olfactory receptor neuron
+        populations, <code>ORN_DA1</code>/<code>ORN_DA2</code> (the actual cVA-pheromone
+        glomerulus). That signal runs through the real male-cns:v1.0 connectome into real
+        <code>pC1</code>/<code>aSP</code> courtship decision-hub neurons, which drive real
+        <code>DNp13</code> (courtship-acceptance) and <code>DNa01</code> (steering) descending
+        neurons -- <b>DNp13 crossing a threshold is the actual MATCH/NOPE decision</b>, not a
+        dice roll.</p>
+        <p>The judged signal is your blend <i>times</i> the other fly's own hidden blend (their
+        "receptiveness") -- so the same fly won't match everyone the same way, and who you swipe
+        on matters.</p>
+        <p><b>Cosmetic (not real neurons):</b> the trait names (Wing Shimmer, Leg Length,
+        Antennae Curl, Buzz Confidence), the fly's color tint, and its name are flavor only.
+        "Chemistry" is the one exception -- it's a real, coarse preview of your own fly's ceiling
+        potential, deliberately banded so you can't read off an exact optimal blend.</p>
+        <p>The full connectome is ~176k real neurons; this game runs on a ~8.6k-neuron subgraph
+        pruned down to the real courtship pathway (same real edges/weights, just fewer neurons
+        far from that pathway) so it fits a free hosting tier's memory budget.</p>
+      </div>
+    </details>
   </div>
 
   <div class="status" id="status">connecting...</div>

@@ -178,14 +178,17 @@ class ConnectomeData:
         types = self.sm_types
         sides = self.sm_sides
 
+        # MOTOR_TYPE/visual (steering/vision) are unused by this game's brain.py
+        # (courtship only: DA1/DA2 -> pC1/aSP -> DNa01/DNp13) -- and pruning the
+        # graph down to the courtship-relevant subgraph (see build_pruned_cache.py)
+        # deliberately drops DNp03/LPLC1/LPLC2 entirely to save memory on Render's
+        # free tier. So, unlike the original fly_simulation/fly_drone_delivery
+        # copy of this file, these are optional here too (None/empty rather than
+        # a hard failure), matching FORWARD_TYPE/FEEDING_TYPE's existing pattern.
         motor_l = [i for i in range(self.n_sm) if types[i] == MOTOR_TYPE and sides[i] == "L"]
         motor_r = [i for i in range(self.n_sm) if types[i] == MOTOR_TYPE and sides[i] == "R"]
-        if len(motor_l) != 1 or len(motor_r) != 1:
-            raise ValueError(
-                f"Expected exactly one {MOTOR_TYPE} per side, got L={len(motor_l)} R={len(motor_r)}"
-            )
-        self.motor_l_idx = motor_l[0]
-        self.motor_r_idx = motor_r[0]
+        self.motor_l_idx = motor_l[0] if len(motor_l) == 1 else None
+        self.motor_r_idx = motor_r[0] if len(motor_r) == 1 else None
 
         self.left_visual_idx = np.array(
             [i for i in range(self.n_sm) if types[i] in ("LPLC1", "LPLC2") and sides[i] == "L"],
@@ -195,8 +198,6 @@ class ConnectomeData:
             [i for i in range(self.n_sm) if types[i] in ("LPLC1", "LPLC2") and sides[i] == "R"],
             dtype=np.int64,
         )
-        if len(self.left_visual_idx) == 0 or len(self.right_visual_idx) == 0:
-            raise ValueError("Could not resolve left/right visual (LPLC1/LPLC2) neuron indices")
 
         # Extended behavioral outputs (forward-drive, feeding) -- only resolvable
         # when scope="full", since the curated fetch never pulls FORWARD_TYPE/

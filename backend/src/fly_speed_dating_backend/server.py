@@ -15,38 +15,44 @@ import numpy as np
 import websockets
 from dotenv import load_dotenv
 
-from fly_speed_dating_backend.connectome import load_or_build_connectome
+from fly_speed_dating_backend.connectome import ConnectomeData
 
 from fly_speed_dating_backend.brain import NeuralBridge
 from fly_speed_dating_backend import leaderboard
 
 # .env lives at the project root (sibling of backend/) -- same convention as
-# leaderboard.py. Only NEUPRINT_TOKEN/HOST need it here; the Supabase keys are
-# loaded independently by leaderboard.py.
+# leaderboard.py, which loads the Supabase keys independently.
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
 
-# The ~80MB connectome cache ships in-repo (backend/.cache/) so deploys (e.g.
-# Render) work standalone with no NeuPrint fetch or external download at
-# boot -- a live fetch takes minutes and would badly undercut a fast cold
-# start. Override with the env var if you want a different location.
-CONNECTOME_CACHE_DIR = os.environ.get(
-    "CONNECTOME_CACHE_DIR",
-    os.path.join(os.path.dirname(__file__), "..", "..", ".cache"),
+# Ships in-repo (backend/.cache/) -- the *pruned* courtship-subgraph cache
+# (~3.5MB, 8.6k neurons), not the full 176k-neuron/80MB connectome. The full
+# graph alone uses ~400MB just to load, which OOMs on Render free tier's
+# 512MB limit; this game only ever touches the real DA1/DA2 -> pC1/aSP ->
+# DNa01/DNp13 pathway, so scripts/build_pruned_cache.py extracts just that
+# real subgraph (same edges/weights, far fewer neurons -- see that script's
+# docstring for the pruning method and why naive N-hop doesn't work on this
+# small-world graph). Re-run that script if the courtship pathway constants
+# in connectome.py ever change. No live-NeuPrint fallback here on purpose --
+# if this file is missing, fail loudly rather than attempt a multi-minute,
+# memory-heavy full fetch on a constrained instance.
+CONNECTOME_CACHE_PATH = os.environ.get(
+    "CONNECTOME_CACHE_PATH",
+    os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "connectome_male-cns_v1_0_courtship_pruned.npz"),
 )
-NEUPRINT_TOKEN = os.environ.get("NEUPRINT_TOKEN")
-NEUPRINT_HOST = os.environ.get("NEUPRINT_HOST", "neuprint.janelia.org")
 
 TICK_HZ = 20.0
 DT = 1.0 / TICK_HZ
 EVAL_TICKS = 40
 
 # The judged blend is (suitor_da1 * receptiveness_da1, suitor_da2 * receptiveness_da2)
-# -- see swipe() -- so accept_r ~= 4.64e-7*da1_eff + 1.29e-7*da2_eff where da1_eff/
-# da2_eff are each a product of two independent [0,1] draws (own fly x candidate).
-# Threshold re-calibrated via Monte Carlo against *that* distribution (not the raw
-# single-blend one) for a ~35% overall match rate, ~74% for a near-max mint, ~0%
-# for a weak one -- a real skill/luck gradient instead of all-or-nothing.
-MATCH_THRESHOLD = 1.7e-7
+# -- see swipe(). Re-measured against the *pruned* courtship subgraph (pruning
+# changes the exact edge weights reachable, though not the qualitative real
+# pathway or its linearity -- see build_pruned_cache.py):
+#   accept_r(da1_eff, da2_eff) ~= 3.16e-7*da1_eff + 6.29e-8*da2_eff
+# Threshold re-calibrated via Monte Carlo against that distribution for a ~35%
+# overall match rate, ~72% for a near-max mint, ~0% for a weak one -- a real
+# skill/luck gradient instead of all-or-nothing.
+MATCH_THRESHOLD = 1.09e-7
 
 # Star bands for the ONE real, honest signal shown to the player pre-commit (the
 # "Chemistry" stat on their own minted fly, Male/Suitor role only) -- a coarse,
@@ -58,7 +64,7 @@ MATCH_THRESHOLD = 1.7e-7
 # from an open slider -- the actual blend stays hidden, only this 5-band summary
 # is shown. Bands re-calibrated via Monte Carlo (~16/23/23/23/16% split) against
 # the recalibrated MATCH_THRESHOLD above.
-CHEMISTRY_BANDS = [0.8, 1.4, 2.0, 2.7]  # multiples of MATCH_THRESHOLD
+CHEMISTRY_BANDS = [0.75, 1.4, 2.1, 2.7]  # multiples of MATCH_THRESHOLD
 
 HEARTS_START = 3  # Male/Suitor role only -- lose one per real rejection.
 
@@ -321,12 +327,14 @@ async def handle_client(websocket, connectome) -> None:
 
 
 async def main() -> None:
-    print("Loading connectome (cached, should be fast)...")
-    connectome = load_or_build_connectome(
-        token=NEUPRINT_TOKEN, host=NEUPRINT_HOST, cache_dir=CONNECTOME_CACHE_DIR, scope="full",
-    )
+    print(f"Loading pruned courtship-subgraph connectome from {CONNECTOME_CACHE_PATH}...")
+    with np.load(CONNECTOME_CACHE_PATH, allow_pickle=False) as npz:
+        connectome = ConnectomeData.from_npz(npz)
     if connectome.courtship_accept_l_idx is None or len(connectome.courtship_hub_idx) == 0:
-        raise RuntimeError("courtship indices not resolved -- expected scope='full'.")
+        raise RuntimeError(
+            f"courtship indices not resolved from {CONNECTOME_CACHE_PATH} -- "
+            "re-run scripts/build_pruned_cache.py?"
+        )
     print(f"Connectome ready: {connectome.n_sm} neurons, {connectome.sm_adjacency.nnz} edges.")
 
     # 0.0.0.0 + $PORT so this binds correctly on Render (or any host that

@@ -11,3 +11,8 @@ __pycache__/
 .agents/
 .claude/
 skills-lock.json
+
+# Dev-only: the full 176k-neuron connectome, needed only to regenerate the
+# pruned cache (see backend/scripts/build_pruned_cache.py). The deployed app
+# only ever loads the pruned cache, which IS committed.
+backend/.cache/connectome_male-cns_v1_0_full.npz

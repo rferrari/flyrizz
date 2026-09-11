@@ -13,16 +13,26 @@ on its own.
 
 ### Connectome cache
 
-The ~80MB real connectome cache (`connectome_male-cns_v1_0_full.npz`, 176k neurons / 25.7M
-synaptic edges) ships committed in-repo at `backend/.cache/` -- deliberately, so a fresh deploy
-(e.g. Render) never needs a live NeuPrint fetch at boot, which takes several minutes and would
-badly undercut a fast cold start. If that file is ever missing, `NEUPRINT_TOKEN`/`NEUPRINT_HOST`
-(see `.env.example`) let the backend fetch it live instead, once, on first boot.
+The full real connectome is ~176k neurons / 25.7M synaptic edges and takes ~400MB of RAM just to
+load -- too much for a free hosting tier (e.g. Render's 512MB limit OOMs almost immediately). This
+game only ever touches the real courtship pathway (`DA1`/`DA2` -> `pC1`/`aSP` -> `DNa01`/`DNp13`),
+so what ships committed in-repo at `backend/.cache/` is a *pruned* subgraph -- same real edges and
+weights, just restricted to the ~8.6k neurons reachable around that pathway (~3.5MB, ~165MB RAM to
+load). See `backend/scripts/build_pruned_cache.py` for exactly how it's derived and why naive
+graph pruning doesn't work on this small-world connectome.
+
+If the courtship pathway constants in `connectome.py` ever change, regenerate it:
+```bash
+cd backend
+# needs the full connectome cache locally first (NEUPRINT_TOKEN required for a from-scratch fetch)
+uv run python -c "from fly_speed_dating_backend.connectome import load_or_build_connectome as l; l(cache_dir='.cache', scope='full', token='...')"
+uv run python scripts/build_pruned_cache.py
+```
 
 ## Setup
 
 ```bash
-cp .env.example .env   # fill in Supabase keys; NEUPRINT_TOKEN only needed if no cache exists yet
+cp .env.example .env   # fill in Supabase keys; NEUPRINT_TOKEN only needed to regenerate the cache
 cd backend && uv sync
 ```
 
@@ -52,9 +62,10 @@ enabled with public read-only policies -- writes go through the backend's servic
 - Root Directory: `backend`
 - Build Command: `pip install uv && uv sync --frozen`
 - Start Command: `uv run python -m fly_speed_dating_backend.server`
-- Environment variables: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (`NEUPRINT_TOKEN`/`NEUPRINT_HOST`
-  only matter if `backend/.cache/` is ever removed). Render sets `PORT` itself -- the server reads
-  it automatically and binds `0.0.0.0`, which is required for Render's router to reach it.
+- Environment variables: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (the server never reads
+  `NEUPRINT_TOKEN`/`NEUPRINT_HOST` -- those only matter for the local cache-regeneration command
+  above). Render sets `PORT` itself -- the server reads it automatically and binds `0.0.0.0`, which
+  is required for Render's router to reach it.
 
 **Frontend** -- any static host (Render Static Site, Netlify, GitHub Pages, ...) serving
 `frontend/index.html` as-is. Before deploying, edit the `WS_URL` fallback near the top of that
