@@ -1,5 +1,7 @@
 # FlyRizz
 
+![FlyRizz cover](cover.png)
+
 A courtship "speed dating" game judged by a real Drosophila connectome (`male-cns:v1.0`, ~176k
 real neurons). Pick a role, mint a fly, swipe on dates -- each real outcome is decided by real
 `pC1`/`aSP` courtship-decision neurons driving real `DNp13`/`DNa01` descending outputs, not a
@@ -78,3 +80,7 @@ every 2s and queues whatever the player does in the meantime (role/name choices 
 no server needed for those) -- a full-screen "waking up the fly brain" overlay only blocks once
 they reach an action that needs a real server response (starting to mint), and auto-continues the
 moment it connects.
+
+---
+
+[github.com/rferrari/flyrizz](https://github.com/rferrari/flyrizz)
