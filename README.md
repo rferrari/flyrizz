@@ -1,6 +1,6 @@
 # FlyRizz
 
-![FlyRizz cover](cover.png)
+![FlyRizz cover](og-image.png)
 
 A courtship "speed dating" game judged by a real Drosophila connectome (`male-cns:v1.0`, ~176k
 real neurons). Pick a role, mint a fly, swipe on dates -- each real outcome is decided by real
