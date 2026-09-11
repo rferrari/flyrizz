@@ -2,7 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FlyRizz - Fly Speed Dating</title>
+<meta name="description" content="A real Drosophila brain decides who matches. Mint a fly, swipe on dates -- real pC1/aSP neurons drive real DNp13/DNa01 descending outputs to judge every date on the real male-cns:v1.0 connectome." />
+
+<!-- Open Graph (Facebook, Discord, Slack, iMessage, LinkedIn, ...) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://flyrizz.vercel.app/" />
+<meta property="og:title" content="FlyRizz" />
+<meta property="og:description" content="A real Drosophila brain decides who matches. Mint a fly, swipe on dates, let real neurons judge." />
+<meta property="og:image" content="https://flyrizz.vercel.app/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!-- Twitter/X Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="FlyRizz" />
+<meta name="twitter:description" content="A real Drosophila brain decides who matches. Mint a fly, swipe on dates, let real neurons judge." />
+<meta name="twitter:image" content="https://flyrizz.vercel.app/og-image.png" />
 <style>
   :root {
     color-scheme: dark;
@@ -66,6 +83,14 @@
   .result-title.passed { color: var(--dim); }
   .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
   .status { text-align: center; font-size: 0.8rem; color: var(--dim); }
+  .share-btn { display: block; margin: 4px auto 0; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+    background: #2c1c40; color: var(--text); padding: 10px 20px; border-radius: 999px;
+    font-size: 0.85rem; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
   .status.connected { color: var(--good); }
   table.lb { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   table.lb th, table.lb td { text-align: left; padding: 4px 6px; color: var(--dim); }
@@ -126,6 +151,9 @@
 <div class="app">
   <h1>FlyRizz</h1>
   <div class="subtitle">One real Drosophila connectome (male-cns:v1.0, ~8.6k-neuron courtship subgraph). Cosmetic traits are flavor; DA1/DA2, pC1/aSP, DNp13, DNa01 are real.</div>
+  <div class="center">
+    <button class="secondary share-btn" id="share-btn">🔗 Share FlyRizz</button>
+  </div>
 
   <!-- ROLE SELECT -->
   <div class="panel" id="screen-role" style="display:none">
@@ -193,7 +221,10 @@
           <div class="result-title" id="result-title">MATCH!</div>
           <div class="result-sub" id="result-sub"></div>
         </div>
-        <div class="btn-row"><button id="btn-next">Next</button></div>
+        <div class="btn-row">
+          <button class="secondary" id="btn-share-result" style="display:none">📣 Share</button>
+          <button id="btn-next">Next</button>
+        </div>
       </div>
 
       <div id="dead-block" class="center" style="display:none">
@@ -240,6 +271,8 @@
   <div class="status" id="status">connecting...</div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <div id="waking-overlay" style="display:none">
   <div class="waking-fly">🪰</div>
   <div class="waking-message" id="waking-message">Waking up the fly brain...</div>
@@ -256,6 +289,7 @@ const WS_URL = (location.hostname === "localhost" || location.hostname === "127.
 
 let ws = null;
 let lastPhase = null;
+let lastState = null;
 let lastSuggestedName = null;
 let receivedRealSnapshot = false;
 const el = (id) => document.getElementById(id);
@@ -360,6 +394,44 @@ el("btn-swipe-right").addEventListener("click", () => send({ type: "swipe", dire
 el("btn-next").addEventListener("click", () => send({ type: "next" }, { blocking: true }));
 el("btn-new-fly").addEventListener("click", () => send({ type: "new_fly" }, { blocking: true }));
 
+const SITE_URL = "https://flyrizz.vercel.app/";
+let toastTimer = null;
+function showToast(msg) {
+  const t = el("toast");
+  t.textContent = msg;
+  t.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("visible"), 2200);
+}
+
+async function shareOrCopy(shareData) {
+  if (navigator.share) {
+    try { await navigator.share(shareData); } catch (e) { /* user cancelled -- fine */ }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+    showToast("Link copied to clipboard!");
+  } catch (e) {
+    showToast("Couldn't copy -- copy the URL manually.");
+  }
+}
+
+el("share-btn").addEventListener("click", () => shareOrCopy({
+  title: "FlyRizz",
+  text: "A real Drosophila brain decides who matches. Mint a fly, swipe on dates -- FlyRizz:",
+  url: SITE_URL,
+}));
+
+el("btn-share-result").addEventListener("click", () => {
+  const name = lastState?.name || "My fly";
+  shareOrCopy({
+    title: "FlyRizz",
+    text: `${name} just matched on FlyRizz -- a real Drosophila brain decided! 🪰❤️`,
+    url: SITE_URL,
+  });
+});
+
 function starString(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
 
 function renderTraits(container, cosmetic, chemistryStars) {
@@ -453,6 +525,7 @@ function showOnly(ids) {
 }
 
 function applyState(state) {
+  lastState = state;
   if (state.phase !== lastPhase) {
     lastPhase = state.phase;
     if (state.phase === "ROLE_SELECT") showOnly(["screen-role"]);
@@ -484,6 +557,7 @@ function applyState(state) {
       el("result-sub").textContent = state.result === "PASSED"
         ? "You swiped left -- no interaction happened."
         : `Real DNp13 output: ${state.accept.toExponential(2)} (threshold ${state.match_threshold.toExponential(2)})`;
+      el("btn-share-result").style.display = state.result === "MATCH" ? "inline-block" : "none";
     } else if (state.phase === "DEAD") {
       el("dating-block").style.display = "none";
       el("eval-block").style.display = "none";
