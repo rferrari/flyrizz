@@ -712,14 +712,7 @@ function applyState(state) {
   if (typeof state.total_matches === "number") {
     el("billboard-panel").style.display = "block";
     const n = state.total_matches;
-    const templates = [
-      `We've helped ${n} fl${n === 1 ? "y" : "ies"} find love (their real brains did the swiping)`,
-      `${n} fl${n === 1 ? "y has" : "ies have"} coupled up here`,
-      `${n} real fly romance${n === 1 ? "" : "s"}, verified by actual neurons`,
-      `${n} fl${n === 1 ? "y" : "ies"} left here in a relationship`,
-      `${n} fl${n === 1 ? "y" : "ies"} found their soulmate (probably)`,
-    ];
-    el("billboard-stat").textContent = templates[n % templates.length];
+    el("billboard-stat").textContent = `We've helped ${n} fl${n === 1 ? "y" : "ies"} find love ❤️`;
   }
   updateMarquee(state.recent_matches);
 
