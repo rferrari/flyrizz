@@ -19,7 +19,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from connectome import ConnectomeData
+from fly_speed_dating_backend.connectome import ConnectomeData
 
 
 class BrainOutput(NamedTuple):

@@ -279,41 +279,26 @@ wheels = [
 ]
 
 [[package]]
-name = "fly-simulation"
-version = "0.1.0"
-source = { editable = "../../fly_simulation" }
-dependencies = [
-    { name = "neuprint-python" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "scipy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "neuprint-python" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pygame", marker = "extra == 'pygame'" },
-    { name = "scipy" },
-]
-provides-extras = ["pygame"]
-
-[[package]]
 name = "fly-speed-dating-backend"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "fly-simulation" },
+    { name = "neuprint-python" },
+    { name = "numpy" },
+    { name = "pandas" },
     { name = "python-dotenv" },
+    { name = "scipy" },
     { name = "supabase" },
     { name = "websockets" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "fly-simulation", editable = "../../fly_simulation" },
+    { name = "neuprint-python" },
+    { name = "numpy" },
+    { name = "pandas" },
     { name = "python-dotenv", specifier = ">=1.0,<2" },
+    { name = "scipy" },
     { name = "supabase", specifier = ">=2.10,<3" },
     { name = "websockets", specifier = ">=13,<14" },
 ]

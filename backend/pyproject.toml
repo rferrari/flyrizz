@@ -8,17 +8,14 @@ authors = [
 ]
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "fly-simulation",
     "websockets>=13,<14",
     "supabase>=2.10,<3",
     "python-dotenv>=1.0,<2",
+    "neuprint-python",
+    "numpy",
+    "scipy",
+    "pandas",
 ]
-
-[tool.uv.sources]
-# Assumes fly_simulation is checked out as a sibling directory of this
-# project's parent (see the root README) -- relative so this works for any
-# clone, not just the machine this was first written on.
-fly-simulation = { path = "../../fly_simulation", editable = true }
 
 [build-system]
 requires = ["uv_build>=0.11.29,<0.12.0"]

@@ -15,7 +15,7 @@ import numpy as np
 import websockets
 from dotenv import load_dotenv
 
-from connectome import load_or_build_connectome
+from fly_speed_dating_backend.connectome import load_or_build_connectome
 
 from fly_speed_dating_backend.brain import NeuralBridge
 from fly_speed_dating_backend import leaderboard
@@ -25,14 +25,13 @@ from fly_speed_dating_backend import leaderboard
 # loaded independently by leaderboard.py.
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
 
-# Default assumes the standard sibling checkout layout this project has used
-# throughout (fly_simulation/ and fly_speed_dating/ under the same parent
-# directory, as documented in the README) -- override with the env var if
-# your layout differs. Only actually read from if the cache file is missing;
-# every normal run hits the cache and never needs NEUPRINT_TOKEN/HOST at all.
+# The ~80MB connectome cache ships in-repo (backend/.cache/) so deploys (e.g.
+# Render) work standalone with no NeuPrint fetch or external download at
+# boot -- a live fetch takes minutes and would badly undercut a fast cold
+# start. Override with the env var if you want a different location.
 CONNECTOME_CACHE_DIR = os.environ.get(
     "CONNECTOME_CACHE_DIR",
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "fly_simulation", ".cache"),
+    os.path.join(os.path.dirname(__file__), "..", "..", ".cache"),
 )
 NEUPRINT_TOKEN = os.environ.get("NEUPRINT_TOKEN")
 NEUPRINT_HOST = os.environ.get("NEUPRINT_HOST", "neuprint.janelia.org")
@@ -330,8 +329,14 @@ async def main() -> None:
         raise RuntimeError("courtship indices not resolved -- expected scope='full'.")
     print(f"Connectome ready: {connectome.n_sm} neurons, {connectome.sm_adjacency.nnz} edges.")
 
-    async with websockets.serve(lambda ws: handle_client(ws, connectome), "localhost", 8766):
-        print("Backend listening on ws://localhost:8766")
+    # 0.0.0.0 + $PORT so this binds correctly on Render (or any host that
+    # assigns a port via env var); falls back to the local-dev defaults
+    # otherwise. Must be 0.0.0.0, not "localhost" -- Render's router can't
+    # reach a loopback-only bind.
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 8766))
+    async with websockets.serve(lambda ws: handle_client(ws, connectome), host, port):
+        print(f"Backend listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
 
 

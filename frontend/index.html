@@ -78,6 +78,19 @@
     padding: 16px; text-align: center; cursor: pointer;
   }
   .role-choice > div:hover { border-color: var(--accent); }
+  #waking-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(10, 4, 18, 0.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; gap: 10px;
+  }
+  .waking-fly { font-size: 4rem; animation: waking-buzz 0.6s infinite alternate ease-in-out; }
+  @keyframes waking-buzz {
+    from { transform: translate(0, 0) rotate(-4deg); }
+    to { transform: translate(6px, -8px) rotate(4deg); }
+  }
+  .waking-message { font-size: 1.1rem; font-weight: 600; max-width: 380px; }
+  .waking-sub { color: var(--dim); font-size: 0.85rem; max-width: 340px; }
   .tinder-photo {
     width: 100%; aspect-ratio: 4/3; max-height: 220px; border-radius: 14px;
     background: linear-gradient(160deg, #2a1440, #150a22);
@@ -189,39 +202,125 @@
   <div class="status" id="status">connecting...</div>
 </div>
 
+<div id="waking-overlay" style="display:none">
+  <div class="waking-fly">🪰</div>
+  <div class="waking-message" id="waking-message">Waking up the fly brain...</div>
+  <div class="waking-sub">Free server was asleep -- this can take up to a minute on a cold start.</div>
+</div>
+
 <script>
-const WS_URL = "ws://localhost:8766";
+// Auto-detect local dev vs a deployed backend. Edit the fallback below once
+// the backend is deployed (e.g. on Render) -- this file has no build step,
+// so this literal string is the actual config.
+const WS_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+  ? "ws://localhost:8766"
+  : "wss://REPLACE_WITH_YOUR_RENDER_BACKEND_URL.onrender.com";
+
 let ws = null;
 let lastPhase = null;
 let lastSuggestedName = null;
+let receivedRealSnapshot = false;
 const el = (id) => document.getElementById(id);
+
+// Actions taken before the backend has responded even once are queued and
+// replayed in order the moment it connects -- lets the player pick a role
+// and name immediately on a cold Render start instead of staring at a blank
+// screen, without faking any server-authored (real neuron / random-mint)
+// data client-side.
+const pendingQueue = [];
+
+const WAKING_MESSAGES = [
+  "Waking up the fly brain...",
+  "Buzzing 176,422 neurons back to life...",
+  "Free server was asleep. Poking it awake...",
+  "Booting a real Drosophila connectome...",
+  "Un-napping her real pC1/aSP neurons...",
+  "Almost there, hang tight...",
+];
+let wakingInterval = null;
+
+function showWakingOverlay() {
+  const overlay = el("waking-overlay");
+  if (overlay.style.display === "flex") return;
+  overlay.style.display = "flex";
+  let i = 0;
+  el("waking-message").textContent = WAKING_MESSAGES[0];
+  wakingInterval = setInterval(() => {
+    i = (i + 1) % WAKING_MESSAGES.length;
+    el("waking-message").textContent = WAKING_MESSAGES[i];
+  }, 2500);
+}
+
+function hideWakingOverlay() {
+  el("waking-overlay").style.display = "none";
+  if (wakingInterval) { clearInterval(wakingInterval); wakingInterval = null; }
+}
 
 function connect() {
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => { el("status").textContent = "connected"; el("status").classList.add("connected"); };
+  ws.onopen = () => {
+    el("status").textContent = "connected"; el("status").classList.add("connected");
+    while (pendingQueue.length) ws.send(JSON.stringify(pendingQueue.shift()));
+    hideWakingOverlay();
+  };
   ws.onclose = () => {
     el("status").textContent = "disconnected -- retrying...";
     el("status").classList.remove("connected");
     setTimeout(connect, 2000);
   };
   ws.onerror = () => ws.close();
-  ws.onmessage = (event) => applyState(JSON.parse(event.data));
+  ws.onmessage = (event) => { receivedRealSnapshot = true; applyState(JSON.parse(event.data)); };
 }
 
-function send(obj) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+// `blocking: true` means this action needs a real server response before the
+// game can continue (e.g. minting real traits) -- if we're not connected
+// yet, show the full waking overlay instead of silently doing nothing.
+function send(obj, { blocking = false } = {}) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(obj));
+  } else {
+    pendingQueue.push(obj);
+    if (blocking) showWakingOverlay();
+  }
 }
 
-el("role-male").addEventListener("click", () => send({ type: "choose_role", role: "male" }));
-el("role-female").addEventListener("click", () => send({ type: "choose_role", role: "female" }));
-el("name-confirm").addEventListener("click", () => send({ type: "set_name", name: el("name-input").value }));
-el("name-reroll").addEventListener("click", () => send({ type: "reroll_name" }));
-el("btn-remint").addEventListener("click", () => send({ type: "remint" }));
-el("btn-confirm-fly").addEventListener("click", () => send({ type: "confirm_fly" }));
-el("btn-swipe-left").addEventListener("click", () => send({ type: "swipe", direction: "left" }));
-el("btn-swipe-right").addEventListener("click", () => send({ type: "swipe", direction: "right" }));
-el("btn-next").addEventListener("click", () => send({ type: "next" }));
-el("btn-new-fly").addEventListener("click", () => send({ type: "new_fly" }));
+// Small local word banks purely for the pre-connection "New Name" fallback
+// suggestion -- cosmetic only, same spirit as the backend's generator but
+// not the same list. The real suggested_name (and the real minted fly) only
+// ever comes from the server; this just avoids a blank input while offline.
+const LOCAL_NAME_A = ["Buzz", "Gnat", "Fuzz", "Nectar", "Sting", "Hover", "Wing"];
+const LOCAL_NAME_B = ["ella", "zoom", "ster", "ox", "bee", "ini", "wick"];
+function localFallbackName() {
+  return LOCAL_NAME_A[Math.floor(Math.random() * LOCAL_NAME_A.length)]
+    + LOCAL_NAME_B[Math.floor(Math.random() * LOCAL_NAME_B.length)];
+}
+
+function chooseRoleOptimistic(role) {
+  send({ type: "choose_role", role });
+  // Advance the UI immediately -- role choice needs no server-authored data,
+  // so there's no reason to make the player wait for a cold backend just to
+  // see the name screen.
+  if (!receivedRealSnapshot) {
+    showOnly(["screen-name"]);
+    el("name-input").value = localFallbackName();
+  }
+}
+
+el("role-male").addEventListener("click", () => chooseRoleOptimistic("male"));
+el("role-female").addEventListener("click", () => chooseRoleOptimistic("female"));
+el("name-confirm").addEventListener("click", () => {
+  send({ type: "set_name", name: el("name-input").value }, { blocking: true });
+});
+el("name-reroll").addEventListener("click", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) send({ type: "reroll_name" });
+  else el("name-input").value = localFallbackName();
+});
+el("btn-remint").addEventListener("click", () => send({ type: "remint" }, { blocking: true }));
+el("btn-confirm-fly").addEventListener("click", () => send({ type: "confirm_fly" }, { blocking: true }));
+el("btn-swipe-left").addEventListener("click", () => send({ type: "swipe", direction: "left" }, { blocking: true }));
+el("btn-swipe-right").addEventListener("click", () => send({ type: "swipe", direction: "right" }, { blocking: true }));
+el("btn-next").addEventListener("click", () => send({ type: "next" }, { blocking: true }));
+el("btn-new-fly").addEventListener("click", () => send({ type: "new_fly" }, { blocking: true }));
 
 function starString(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
 
@@ -399,6 +498,9 @@ function applyState(state) {
   });
 }
 
+// Show the role-select screen immediately -- no reason to stare at a blank
+// page while the backend (possibly a cold Render instance) wakes up.
+showOnly(["screen-role"]);
 connect();
 </script>
 </body>
