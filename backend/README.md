@@ -13,6 +13,6 @@ purely cosmetic role labels on the same brain -- no second brain is faked or fet
 traits (Wing Shimmer, Leg Length, etc.) and per-fly color tint are flavor only, not derived from
 any real neuron; only DA1/DA2, pC1/aSP, DNp13, and DNa01 are real.
 
-See `/home/adam/.claude/plans/greedy-bouncing-flamingo.md` for the full design/verification
-rationale (every neuron type here -- `pC1`, `aSP`, `DNp13`, `DNa01`, `ORN_DA1`, `ORN_DA2` -- was
-confirmed to actually exist and connect via live NeuPrint queries, not assumed).
+Every neuron type here -- `pC1`, `aSP`, `DNp13`, `DNa01`, `ORN_DA1`, `ORN_DA2` -- was confirmed to
+actually exist and connect via live NeuPrint queries against `male-cns:v1.0`, not assumed from
+literature. See the root [`README.md`](../README.md) for setup and how to run this.

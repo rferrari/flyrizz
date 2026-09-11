@@ -13,13 +13,27 @@ import random
 
 import numpy as np
 import websockets
+from dotenv import load_dotenv
 
 from connectome import load_or_build_connectome
 
 from fly_speed_dating_backend.brain import NeuralBridge
 from fly_speed_dating_backend import leaderboard
 
-CONNECTOME_CACHE_DIR = "/home/adam/projects/fly_simulation/.cache"
+# .env lives at the project root (sibling of backend/) -- same convention as
+# leaderboard.py. Only NEUPRINT_TOKEN/HOST need it here; the Supabase keys are
+# loaded independently by leaderboard.py.
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
+
+# Default assumes the standard sibling checkout layout this project has used
+# throughout (fly_simulation/ and fly_speed_dating/ under the same parent
+# directory, as documented in the README) -- override with the env var if
+# your layout differs. Only actually read from if the cache file is missing;
+# every normal run hits the cache and never needs NEUPRINT_TOKEN/HOST at all.
+CONNECTOME_CACHE_DIR = os.environ.get(
+    "CONNECTOME_CACHE_DIR",
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "fly_simulation", ".cache"),
+)
 NEUPRINT_TOKEN = os.environ.get("NEUPRINT_TOKEN")
 NEUPRINT_HOST = os.environ.get("NEUPRINT_HOST", "neuprint.janelia.org")
 

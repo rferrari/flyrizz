@@ -281,7 +281,7 @@ wheels = [
 [[package]]
 name = "fly-simulation"
 version = "0.1.0"
-source = { editable = "/home/adam/projects/fly_simulation" }
+source = { editable = "../../fly_simulation" }
 dependencies = [
     { name = "neuprint-python" },
     { name = "numpy" },
@@ -312,7 +312,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fly-simulation", editable = "/home/adam/projects/fly_simulation" },
+    { name = "fly-simulation", editable = "../../fly_simulation" },
     { name = "python-dotenv", specifier = ">=1.0,<2" },
     { name = "supabase", specifier = ">=2.10,<3" },
     { name = "websockets", specifier = ">=13,<14" },

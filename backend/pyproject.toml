@@ -15,7 +15,10 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-fly-simulation = { path = "/home/adam/projects/fly_simulation", editable = true }
+# Assumes fly_simulation is checked out as a sibling directory of this
+# project's parent (see the root README) -- relative so this works for any
+# clone, not just the machine this was first written on.
+fly-simulation = { path = "../../fly_simulation", editable = true }
 
 [build-system]
 requires = ["uv_build>=0.11.29,<0.12.0"]
