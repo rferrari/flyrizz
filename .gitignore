@@ -6,3 +6,8 @@ __pycache__/
 
 # Env/secrets
 .env
+
+# Local Claude Code agent-skill tooling state (not project source)
+.agents/
+.claude/
+skills-lock.json

@@ -1,7 +1,7 @@
 [project]
 name = "fly-speed-dating-backend"
 version = "0.1.0"
-description = "Real Drosophila-connectome courtship decision (pC1/aSP -> DNa01/DNp13) driving a speed-dating game over WebSocket."
+description = "FlyRizz -- real Drosophila-connectome courtship decision (pC1/aSP -> DNa01/DNp13) driving a speed-dating game over WebSocket."
 readme = "README.md"
 authors = [
     { name = "rferrari", email = "495887+rferrari@users.noreply.github.com" }
@@ -10,6 +10,8 @@ requires-python = ">=3.12,<3.15"
 dependencies = [
     "fly-simulation",
     "websockets>=13,<14",
+    "supabase>=2.10,<3",
+    "python-dotenv>=1.0,<2",
 ]
 
 [tool.uv.sources]

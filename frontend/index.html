@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Fly Speed Dating</title>
+<title>FlyRizz - Fly Speed Dating</title>
 <style>
   :root {
     color-scheme: dark;
@@ -26,118 +26,164 @@
     justify-content: center;
     padding: 24px 16px;
   }
-  .app {
-    width: 100%;
-    max-width: 560px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+  .app { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 16px; }
   h1 {
-    text-align: center;
-    font-size: 1.4rem;
-    margin: 0;
+    text-align: center; font-size: 1.4rem; margin: 0;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .subtitle { text-align: center; color: var(--dim); font-size: 0.85rem; margin-top: -8px; }
-  .panel {
-    background: var(--panel);
-    border-radius: 16px;
-    padding: 18px 20px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-  }
+  .panel { background: var(--panel); border-radius: 16px; padding: 18px 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.35); }
   .row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--dim); }
   .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
   .stat-row b { color: var(--text); }
-  .slider-block { margin-top: 14px; }
-  .slider-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
-  .slider-label span:last-child { color: var(--accent); font-variant-numeric: tabular-nums; }
-  input[type=range] {
-    width: 100%;
-    accent-color: var(--accent2);
-  }
-  .timer-bar, .progress-bar {
-    height: 8px;
-    border-radius: 4px;
-    background: #2c1c40;
-    overflow: hidden;
-    margin-top: 10px;
-  }
-  .timer-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.1s linear; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, #4be08a, #7c5cff); transition: width 0.1s linear; }
-  .meter-block { margin-top: 16px; }
-  .meter-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: var(--dim); }
-  .meter-bar { position: relative; height: 22px; border-radius: 11px; background: #2c1c40; overflow: hidden; }
-  .meter-fill { height: 100%; background: linear-gradient(90deg, #7c5cff, #ff5fa2); transition: width 0.15s ease-out; }
-  .meter-threshold { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; opacity: 0.7; }
-  .result-screen { text-align: center; padding: 20px 0; }
-  .result-title { font-size: 2.2rem; font-weight: 800; margin: 4px 0 6px; }
-  .result-title.match { color: var(--good); }
-  .result-title.reject { color: var(--bad); }
-  .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
   button {
     background: linear-gradient(90deg, var(--accent2), var(--accent));
-    border: none;
-    color: white;
-    padding: 12px 28px;
-    border-radius: 999px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
+    border: none; color: white; padding: 12px 28px; border-radius: 999px;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
   }
+  button.secondary { background: #2c1c40; color: var(--dim); }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  input[type=text] {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #3a2456;
+    background: #150a22; color: var(--text); font-size: 1rem;
+  }
+  .center { text-align: center; }
+  .big-emoji { font-size: 3rem; margin: 6px 0; }
+  .trait-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .trait { display: flex; justify-content: space-between; font-size: 0.9rem; }
+  .stars { color: var(--accent); letter-spacing: 2px; }
+  .stars.hidden-chem { color: var(--dim); font-style: italic; letter-spacing: normal; }
+  .hearts { font-size: 1.1rem; letter-spacing: 3px; }
+  .progress-bar { height: 8px; border-radius: 4px; background: #2c1c40; overflow: hidden; margin-top: 10px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4be08a, #7c5cff); transition: width 0.1s linear; }
+  canvas#brainwave { width: 100%; height: 70px; border-radius: 10px 10px 0 0; background: #0d0616; display: block; margin-top: 10px; }
+  canvas#raster { width: 100%; height: 40px; border-radius: 0 0 10px 10px; background: #0d0616; display: block; border-top: 1px solid #241238; }
+  .result-title { font-size: 2.2rem; font-weight: 800; margin: 4px 0 6px; }
+  .result-title.match { color: var(--good); }
+  .result-title.reject, .result-title.dead { color: var(--bad); }
+  .result-title.passed { color: var(--dim); }
+  .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
   .status { text-align: center; font-size: 0.8rem; color: var(--dim); }
   .status.connected { color: var(--good); }
-  .fly-stage { display: flex; justify-content: space-around; align-items: center; height: 70px; font-size: 2.4rem; }
-  .fly-stage .him { transform: scaleX(-1); }
-  .fly-stage .her { transition: transform 0.3s ease-out; }
-  .caption { text-align: center; font-size: 0.75rem; color: var(--dim); margin-top: -4px; }
+  table.lb { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  table.lb th, table.lb td { text-align: left; padding: 4px 6px; color: var(--dim); }
+  table.lb td:first-child, table.lb th:first-child { color: var(--text); }
+  table.lb tr:nth-child(1) td { color: gold; }
+  .fly-card { display: flex; justify-content: center; gap: 14px; align-items: center; }
+  .role-choice { display: flex; gap: 14px; }
+  .role-choice > div {
+    flex: 1; background: #150a22; border: 1px solid #3a2456; border-radius: 14px;
+    padding: 16px; text-align: center; cursor: pointer;
+  }
+  .role-choice > div:hover { border-color: var(--accent); }
+  .tinder-photo {
+    width: 100%; aspect-ratio: 4/3; max-height: 220px; border-radius: 14px;
+    background: linear-gradient(160deg, #2a1440, #150a22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem; margin-bottom: 12px; overflow: hidden;
+  }
+  /* Fixed-height content area below the photo so the layout never jumps
+     between "deciding" / "match" / "nope" -- only one child is ever
+     display:block at a time, and each fills the reserved height with its
+     label/content pinned to the top and its button row pinned to the bottom. */
+  .game-content { min-height: 200px; }
+  .game-content > div {
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 200px;
+  }
+  .game-content .btn-row { margin-top: 0; }
 </style>
 </head>
 <body>
 <div class="app">
-  <h1>Fly Speed Dating</h1>
-  <div class="subtitle">One real Drosophila connectome (male-cns:v1.0). "Him" and "Her" are the same brain -- you tune the input, it judges the output.</div>
+  <h1>FlyRizz</h1>
+  <div class="subtitle">One real Drosophila connectome (male-cns:v1.0). Cosmetic traits are flavor; DA1/DA2, pC1/aSP, DNp13, DNa01 are real.</div>
 
-  <div class="panel">
-    <div class="stat-row"><span>Round <b id="round">1</b></span><span>Matches: <b id="matches">0</b></span></div>
-    <div class="fly-stage">
-      <span class="him">🪰</span>
-      <span class="her" id="her-fly">🪰</span>
+  <!-- ROLE SELECT -->
+  <div class="panel" id="screen-role" style="display:none">
+    <div class="center" style="margin-bottom:10px">Choose your side</div>
+    <div class="role-choice">
+      <div id="role-male"><div class="big-emoji">🪰♂</div><b>Male Suitor</b><div class="subtitle" style="margin-top:6px">Mint a fly, broadcast your blend, survive rejection.</div></div>
+      <div id="role-female"><div class="big-emoji">🪰♀</div><b>Female Chooser</b><div class="subtitle" style="margin-top:6px">Judge suitors by look alone. No hearts, no mercy.</div></div>
     </div>
-    <div class="caption">Male Suitor Console (you) &nbsp;→&nbsp; Her Brain (real pC1/aSP → DNp13/DNa01)</div>
   </div>
 
-  <div class="panel" id="tuning-panel">
-    <div class="row"><span id="phase-label">Tune your pheromone blend</span><span id="timer-text">15.0s</span></div>
-    <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
-
-    <div class="slider-block">
-      <div class="slider-label"><span>DA1 (cVA, strong signal)</span><span id="da1-val">0.00</span></div>
-      <input type="range" id="da1" min="0" max="1" step="0.01" value="0" />
+  <!-- NAME -->
+  <div class="panel" id="screen-name" style="display:none">
+    <div class="center" style="margin-bottom:10px">Name your fly (used on the leaderboard)</div>
+    <input type="text" id="name-input" maxlength="24" placeholder="e.g. Buzzarella" />
+    <div class="btn-row">
+      <button class="secondary" id="name-reroll">🎲 New Name</button>
+      <button id="name-confirm">Let's go</button>
     </div>
-    <div class="slider-block">
-      <div class="slider-label"><span>DA2 (cVA, subtle signal)</span><span id="da2-val">0.00</span></div>
-      <input type="range" id="da2" min="0" max="1" step="0.01" value="0" />
+  </div>
+
+  <!-- MINTING -->
+  <div class="panel" id="screen-mint" style="display:none">
+    <div class="tinder-photo" id="mint-photo">🪰</div>
+    <div class="center"><b id="mint-name"></b></div>
+    <div class="trait-list" id="mint-traits"></div>
+    <div class="subtitle" style="margin-top:10px">Chemistry is your ceiling -- each real date still depends on her own hidden receptiveness.</div>
+    <div class="btn-row">
+      <button class="secondary" id="btn-remint">🎲 Remint</button>
+      <button id="btn-confirm-fly">Start Dating</button>
+    </div>
+  </div>
+
+  <!-- MAIN GAME (dating / eval / result / dead share this shell) -->
+  <div class="panel" id="screen-game" style="display:none">
+    <div class="stat-row">
+      <span id="hearts-row" class="hearts"></span>
+      <span>Matches: <b id="matches">0</b></span>
     </div>
 
-    <div class="meter-block">
-      <div class="meter-label"><span id="meter-label-text">Her brain activity</span><span id="meter-val">0%</span></div>
-      <div class="meter-bar">
-        <div class="meter-fill" id="meter-fill" style="width:0%"></div>
-        <div class="meter-threshold" style="left:60%"></div>
+    <div class="tinder-photo" id="candidate-photo">🪰</div>
+
+    <div class="game-content" id="game-content">
+      <div id="dating-block">
+        <div>
+          <div class="center" style="margin-bottom:6px" id="dating-label">A suitor approaches...</div>
+          <div class="trait-list" id="candidate-traits"></div>
+        </div>
+        <div class="btn-row">
+          <button class="secondary" id="btn-swipe-left">👎 Pass</button>
+          <button id="btn-swipe-right">👍 Like</button>
+        </div>
+      </div>
+
+      <div id="eval-block" style="display:none">
+        <div>
+          <div class="center" id="eval-label">Her real brain is deciding...</div>
+          <canvas id="brainwave" width="500" height="70"></canvas>
+          <canvas id="raster" width="500" height="40"></canvas>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="eval-fill" style="width:0%"></div></div>
+      </div>
+
+      <div id="result-block" class="center" style="display:none">
+        <div>
+          <div class="result-title" id="result-title">MATCH!</div>
+          <div class="result-sub" id="result-sub"></div>
+        </div>
+        <div class="btn-row"><button id="btn-next">Next</button></div>
+      </div>
+
+      <div id="dead-block" class="center" style="display:none">
+        <div>
+          <div class="big-emoji">💔</div>
+          <div class="result-title dead">Your fly died of heartbreak</div>
+          <div class="result-sub" id="dead-sub"></div>
+        </div>
+        <div class="btn-row"><button id="btn-new-fly">Mint a New Fly</button></div>
       </div>
     </div>
-    <div class="progress-bar" id="eval-bar" style="display:none"><div class="progress-fill" id="eval-fill" style="width:0%"></div></div>
   </div>
 
-  <div class="panel result-screen" id="result-panel" style="display:none">
-    <div class="result-title" id="result-title">MATCH!</div>
-    <div class="result-sub" id="result-sub">Her real DNp13 output crossed threshold.</div>
-    <button id="next-btn">Next Date</button>
+  <div class="panel" id="screen-leaderboard">
+    <div class="center" style="margin-bottom:8px">🏆 Leaderboard</div>
+    <table class="lb"><thead><tr><th>Name</th><th>Role</th><th>Matches</th></tr></thead><tbody id="lb-body"></tbody></table>
   </div>
 
   <div class="status" id="status">connecting...</div>
@@ -147,7 +193,7 @@
 const WS_URL = "ws://localhost:8766";
 let ws = null;
 let lastPhase = null;
-
+let lastSuggestedName = null;
 const el = (id) => document.getElementById(id);
 
 function connect() {
@@ -162,66 +208,195 @@ function connect() {
   ws.onmessage = (event) => applyState(JSON.parse(event.data));
 }
 
-function sendBlend() {
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: "set_blend", da1: parseFloat(el("da1").value), da2: parseFloat(el("da2").value) }));
+function send(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
-el("da1").addEventListener("input", () => { el("da1-val").textContent = el("da1").value; sendBlend(); });
-el("da2").addEventListener("input", () => { el("da2-val").textContent = el("da2").value; sendBlend(); });
+el("role-male").addEventListener("click", () => send({ type: "choose_role", role: "male" }));
+el("role-female").addEventListener("click", () => send({ type: "choose_role", role: "female" }));
+el("name-confirm").addEventListener("click", () => send({ type: "set_name", name: el("name-input").value }));
+el("name-reroll").addEventListener("click", () => send({ type: "reroll_name" }));
+el("btn-remint").addEventListener("click", () => send({ type: "remint" }));
+el("btn-confirm-fly").addEventListener("click", () => send({ type: "confirm_fly" }));
+el("btn-swipe-left").addEventListener("click", () => send({ type: "swipe", direction: "left" }));
+el("btn-swipe-right").addEventListener("click", () => send({ type: "swipe", direction: "right" }));
+el("btn-next").addEventListener("click", () => send({ type: "next" }));
+el("btn-new-fly").addEventListener("click", () => send({ type: "new_fly" }));
 
-el("next-btn").addEventListener("click", () => {
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: "next_round" }));
-});
+function starString(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
+
+function renderTraits(container, cosmetic, chemistryStars) {
+  container.innerHTML = "";
+  for (const [trait, val] of Object.entries(cosmetic)) {
+    const row = document.createElement("div");
+    row.className = "trait";
+    row.innerHTML = `<span>${trait}</span><span class="stars">${starString(val)}</span>`;
+    container.appendChild(row);
+  }
+  if (chemistryStars !== undefined) {
+    const row = document.createElement("div");
+    row.className = "trait";
+    const stars = chemistryStars === null || chemistryStars === undefined
+      ? `<span class="stars hidden-chem">unknown</span>`
+      : `<span class="stars">${starString(chemistryStars)}</span>`;
+    row.innerHTML = `<span>Chemistry (ceiling potential)</span>${stars}`;
+    container.appendChild(row);
+  }
+}
+
+function drawBrainwave(series) {
+  // Autoscaled to the series' own min/max (not to the match threshold) --
+  // this signal converges in well under a second in real time, so anchoring
+  // to an absolute scale makes it look like a flat line. Autoscaling shows
+  // the real rise-and-settle shape regardless of its tiny absolute magnitude.
+  const canvas = el("brainwave");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#0d0616";
+  ctx.fillRect(0, 0, w, h);
+  if (!series || series.length === 0) return;
+
+  const lo = Math.min(...series, 0);
+  const hi = Math.max(...series, 1e-12);
+  const span = Math.max(hi - lo, 1e-12);
+  const toY = (v) => h - ((v - lo) / span) * (h - 10) - 5;
+
+  const grad = ctx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, "#7c5cff");
+  grad.addColorStop(1, "#ff5fa2");
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  series.forEach((v, i) => {
+    const x = (i / Math.max(series.length - 1, 1)) * w;
+    const y = toY(v);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  const lastY = toY(series[series.length - 1]);
+  ctx.fillStyle = "#ff5fa2";
+  ctx.shadowColor = "#ff5fa2";
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(w - 2, lastY, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawRaster(neuronValues) {
+  // Real per-neuron activations (a fixed sample of 24 real pC1/aSP neurons),
+  // not an aggregate -- each cell pulses with one actual neuron's activity.
+  const canvas = el("raster");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = "#0d0616";
+  ctx.fillRect(0, 0, w, h);
+  if (!neuronValues || neuronValues.length === 0) return;
+
+  const maxAbs = Math.max(...neuronValues.map(Math.abs), 1e-12);
+  const cols = neuronValues.length;
+  const cellW = w / cols;
+  neuronValues.forEach((v, i) => {
+    const intensity = Math.min(1, Math.abs(v) / maxAbs);
+    const hue = v >= 0 ? 320 : 260; // pink for excitatory-looking, violet for the rest
+    ctx.fillStyle = `hsla(${hue}, 90%, ${35 + intensity * 40}%, ${0.35 + intensity * 0.65})`;
+    const cx = i * cellW + cellW / 2;
+    const r = 3 + intensity * (h / 2 - 4);
+    ctx.beginPath();
+    ctx.arc(cx, h / 2, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function showOnly(ids) {
+  const all = ["screen-role", "screen-name", "screen-mint", "screen-game"];
+  all.forEach((id) => { el(id).style.display = ids.includes(id) ? "block" : "none"; });
+}
 
 function applyState(state) {
-  el("round").textContent = state.round;
-  el("matches").textContent = state.matches;
-
   if (state.phase !== lastPhase) {
     lastPhase = state.phase;
-    if (state.phase === "TUNING") {
-      el("da1").value = 0; el("da2").value = 0;
-      el("da1-val").textContent = "0.00"; el("da2-val").textContent = "0.00";
-      el("da1").disabled = false; el("da2").disabled = false;
-      el("tuning-panel").style.display = "block";
-      el("result-panel").style.display = "none";
-      el("eval-bar").style.display = "none";
-      el("phase-label").textContent = "Tune your pheromone blend";
-      el("her-fly").style.transform = "translateX(0)";
+    if (state.phase === "ROLE_SELECT") showOnly(["screen-role"]);
+    else if (state.phase === "NAME") { showOnly(["screen-name"]); }
+    else if (state.phase === "MINTING") showOnly(["screen-mint"]);
+    else showOnly(["screen-game"]);
+
+    if (state.phase === "DATING") {
+      el("dating-block").style.display = "block";
+      el("eval-block").style.display = "none";
+      el("result-block").style.display = "none";
+      el("dead-block").style.display = "none";
+      el("dating-label").textContent = state.role === "male"
+        ? "She might be interested..." : "A suitor approaches...";
     } else if (state.phase === "EVALUATION") {
-      el("da1").disabled = true; el("da2").disabled = true;
-      el("phase-label").textContent = "Her real brain is deciding...";
-      el("timer-text").textContent = "";
-      el("timer-fill").style.width = "0%";
-      el("eval-bar").style.display = "block";
+      el("dating-block").style.display = "none";
+      el("eval-block").style.display = "block";
+      el("result-block").style.display = "none";
+      el("dead-block").style.display = "none";
     } else if (state.phase === "RESULT") {
-      el("tuning-panel").style.display = "none";
-      el("result-panel").style.display = "block";
-      const match = state.result === "MATCH";
+      el("dating-block").style.display = "none";
+      el("eval-block").style.display = "none";
+      el("result-block").style.display = "block";
+      el("dead-block").style.display = "none";
       const title = el("result-title");
-      title.textContent = match ? "MATCH!" : "NOPE.";
-      title.className = "result-title " + (match ? "match" : "reject");
-      el("result-sub").textContent = match
-        ? `Her real DNp13 output (${state.accept.toExponential(2)}) crossed the threshold.`
-        : `Her real DNp13 output (${state.accept.toExponential(2)}) fell short of ${state.match_threshold.toExponential(2)}.`;
-      el("her-fly").style.transform = match ? "translateX(24px)" : "translateX(-12px)";
+      if (state.result === "MATCH") { title.textContent = "MATCH!"; title.className = "result-title match"; }
+      else if (state.result === "REJECT") { title.textContent = "NOPE."; title.className = "result-title reject"; }
+      else { title.textContent = "you passed"; title.className = "result-title passed"; }
+      el("result-sub").textContent = state.result === "PASSED"
+        ? "You swiped left -- no interaction happened."
+        : `Real DNp13 output: ${state.accept.toExponential(2)} (threshold ${state.match_threshold.toExponential(2)})`;
+    } else if (state.phase === "DEAD") {
+      el("dating-block").style.display = "none";
+      el("eval-block").style.display = "none";
+      el("result-block").style.display = "none";
+      el("dead-block").style.display = "block";
+      el("dead-sub").textContent = `${state.name} racked up ${state.matches} real match(es) before running out of hearts.`;
     }
+
+    // The candidate photo is shared across DATING/EVALUATION/RESULT (same fly
+    // the whole time you're deciding on them) so the layout never jumps --
+    // only hidden once the run ends and there's no "current date" anymore.
+    el("candidate-photo").style.display = (state.phase === "DEAD") ? "none" : "flex";
   }
 
-  if (state.phase === "TUNING") {
-    el("timer-text").textContent = state.time_left.toFixed(1) + "s";
-    el("timer-fill").style.width = (100 * state.time_left / 15.0) + "%";
+  if (state.phase === "MINTING" && state.own_fly) {
+    el("mint-name").textContent = state.name;
+    el("mint-photo").style.filter = `hue-rotate(${state.own_fly.hue}deg) saturate(1.6)`;
+    renderTraits(el("mint-traits"), state.own_fly.cosmetic, state.own_fly.chemistry_stars);
+  }
+  if (state.candidate) {
+    el("candidate-photo").style.filter = `hue-rotate(${state.candidate.hue}deg) saturate(1.6)`;
+  }
+  if (state.phase === "DATING" && state.candidate) {
+    renderTraits(el("candidate-traits"), state.candidate.cosmetic);
   }
   if (state.phase === "EVALUATION") {
     el("eval-fill").style.width = (100 * state.eval_progress) + "%";
+    drawBrainwave(state.eval_series);
+    drawRaster(state.neuron_raster);
   }
-  if (state.phase !== "RESULT") {
-    const meterPct = Math.min(100, 100 * state.accept / state.match_threshold / 1.67);
-    el("meter-fill").style.width = meterPct + "%";
-    el("meter-val").textContent = Math.round(100 * state.accept / state.match_threshold) + "% of match threshold";
+
+  if (state.phase === "NAME" && state.suggested_name !== lastSuggestedName) {
+    lastSuggestedName = state.suggested_name;
+    el("name-input").value = state.suggested_name;
   }
+
+  el("matches").textContent = state.matches;
+  if (state.role === "male" && state.hearts !== null && state.hearts !== undefined) {
+    el("hearts-row").textContent = "❤️".repeat(Math.max(0, state.hearts)) + "🖤".repeat(Math.max(0, 3 - state.hearts));
+  } else {
+    el("hearts-row").textContent = "∞ patience";
+  }
+
+  const lbBody = el("lb-body");
+  lbBody.innerHTML = "";
+  (state.leaderboard || []).forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${row.name}${row.died ? " 💀" : ""}</td><td>${row.role}</td><td>${row.matches}</td>`;
+    lbBody.appendChild(tr);
+  });
 }
 
 connect();
