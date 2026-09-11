@@ -360,12 +360,16 @@
 </div>
 
 <script>
-// Auto-detect local dev vs a deployed backend. Edit the fallback below once
-// the backend is deployed (e.g. on Render) -- this file has no build step,
-// so this literal string is the actual config.
-const WS_URL = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
-  ? "ws://localhost:8766"
-  : "wss://flyrizz.onrender.com";
+// Auto-detect local dev vs the deployed backend. Only the actual deployed
+// frontend domain talks to the deployed backend -- every other way of
+// serving this file (localhost, 127.0.0.1, a LAN IP, file://, a different
+// local port/host) defaults to a local backend instead. This used to be
+// inverted (default to production unless hostname was exactly "localhost"),
+// which meant any other local setup silently talked to the real Render
+// backend instead of a local one.
+const WS_URL = (location.hostname === "flyrizz.vercel.app")
+  ? "wss://flyrizz.onrender.com"
+  : "ws://localhost:8766";
 
 let ws = null;
 let lastPhase = null;
