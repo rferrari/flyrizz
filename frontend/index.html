@@ -84,6 +84,22 @@
   .result-sub { color: var(--dim); font-size: 0.9rem; margin-bottom: 18px; }
   .status { text-align: center; font-size: 0.8rem; color: var(--dim); }
   .share-btn { display: block; margin: 4px auto 0; }
+  .billboard { padding: 14px 0; }
+  .billboard-stat { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+  .marquee {
+    overflow: hidden; white-space: nowrap; border-top: 1px solid #2c1c40;
+    border-bottom: 1px solid #2c1c40; padding: 8px 0;
+  }
+  .marquee-track {
+    display: inline-block; padding-left: 100%;
+    animation: marquee-scroll 22s linear infinite;
+    font-size: 0.9rem; color: var(--dim);
+  }
+  .marquee-track b { color: var(--text); }
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
   .toast {
     position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
     background: #2c1c40; color: var(--text); padding: 10px 20px; border-radius: 999px;
@@ -166,6 +182,14 @@
   <div class="subtitle">One real Drosophila connectome (male-cns:v1.0, ~8.6k-neuron courtship subgraph). Cosmetic traits are flavor; DA1/DA2, pC1/aSP, DNp13, DNa01 are real.</div>
   <div class="center">
     <button class="secondary share-btn" id="share-btn">🔗 Share FlyRizz</button>
+  </div>
+
+  <!-- BILLBOARD: always visible, populates as soon as the first snapshot arrives -->
+  <div class="panel billboard">
+    <div class="center billboard-stat" id="billboard-stat">🎉 -- real matches made by real Drosophila brains</div>
+    <div class="marquee" id="marquee">
+      <div class="marquee-track" id="marquee-track">🪰 Loading real matches...</div>
+    </div>
   </div>
 
   <!-- ROLE SELECT -->
@@ -487,6 +511,27 @@ el("btn-share-result").addEventListener("click", () => {
   });
 });
 
+let lastMarqueeKey = null;
+function updateMarquee(recentMatches) {
+  // recentMatches arrives on every snapshot (20Hz) but only actually changes
+  // about once per leaderboard cache TTL -- skip re-rendering when the
+  // content hasn't changed, both to avoid needless DOM churn and because the
+  // CSS scroll animation is time-based, not tied to content, so there's
+  // nothing to "restart" anyway.
+  const key = JSON.stringify(recentMatches || []);
+  if (key === lastMarqueeKey) return;
+  lastMarqueeKey = key;
+
+  const track = el("marquee-track");
+  if (!recentMatches || recentMatches.length === 0) {
+    track.textContent = "🪰 No matches yet... be the first!";
+    return;
+  }
+  track.innerHTML = recentMatches
+    .map((m) => `🪰 <b>${m.fly_name}</b> found a match!`)
+    .join("&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;");
+}
+
 function starString(n) { return "★".repeat(n) + "☆".repeat(5 - n); }
 
 function renderTraits(container, cosmetic, chemistryStars) {
@@ -659,6 +704,12 @@ function applyState(state) {
   if (typeof state.total_flies === "number") {
     el("total-flies").textContent = `🪰 ${state.total_flies} fl${state.total_flies === 1 ? "y has" : "ies have"} played FlyRizz`;
   }
+
+  if (typeof state.total_matches === "number") {
+    el("billboard-stat").textContent =
+      `🎉 ${state.total_matches} real match${state.total_matches === 1 ? "" : "es"} made by real Drosophila brains`;
+  }
+  updateMarquee(state.recent_matches);
 
   const lbBody = el("lb-body");
   lbBody.innerHTML = "";

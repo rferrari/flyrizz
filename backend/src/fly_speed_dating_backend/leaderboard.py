@@ -96,14 +96,44 @@ def count_players() -> int:
     return result.count or 0
 
 
+def count_total_matches() -> int:
+    """Real global 'matches made' count -- every real MATCH ever logged,
+    across all flies (not per-name, unlike `top()`'s `matches` column).
+    """
+    c = _get_client()
+    result = (
+        c.table("match_log").select("id", count="exact").eq("matched", True).limit(0).execute()
+    )
+    return result.count or 0
+
+
+def recent_matches(n: int = 15) -> list[dict]:
+    """Most recent real matches -- powers the homepage billboard ticker."""
+    c = _get_client()
+    result = (
+        c.table("match_log")
+        .select("fly_name,role")
+        .eq("matched", True)
+        .order("created_at", desc=True)
+        .limit(n)
+        .execute()
+    )
+    return result.data
+
+
 def get_stats(n: int = 10) -> dict:
-    """Cached `{top, total_flies}` -- see CACHE_TTL_SECONDS above. Called on
-    every snapshot, so this is the only leaderboard read that matters for
-    request volume.
+    """Cached `{top, total_flies, total_matches, recent_matches}` -- see
+    CACHE_TTL_SECONDS above. Called on every snapshot, so this is the only
+    leaderboard read that matters for request volume.
     """
     global _stats_cache, _stats_cache_ts
     now = time.monotonic()
     if _stats_cache is None or (now - _stats_cache_ts) > CACHE_TTL_SECONDS:
-        _stats_cache = {"top": top(n), "total_flies": count_players()}
+        _stats_cache = {
+            "top": top(n),
+            "total_flies": count_players(),
+            "total_matches": count_total_matches(),
+            "recent_matches": recent_matches(),
+        }
         _stats_cache_ts = now
     return _stats_cache

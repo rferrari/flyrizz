@@ -292,6 +292,8 @@ class GameSession:
             "result": self.last_result,
             "leaderboard": stats["top"],
             "total_flies": stats["total_flies"],
+            "total_matches": stats["total_matches"],
+            "recent_matches": stats["recent_matches"],
         }
 
 
